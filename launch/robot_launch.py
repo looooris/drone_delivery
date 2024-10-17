@@ -26,12 +26,13 @@ def generate_launch_description():
     )
 
     drone_control = WebotsController(
-        robot_name='drone_one',
-        parameters=[
-            {'robot_description': robot_description_path},
-        ],
-        respawn=True
-    )
+            robot_name="drone_one",
+            parameters=[
+                {'robot_description': robot_description_path},
+            ],
+            respawn=True
+        )
+
 
     obstacle_avoider = Node(
         package='drone_delivery',
@@ -41,7 +42,6 @@ def generate_launch_description():
     return LaunchDescription([
         webots,
         drone_control,
-        obstacle_avoider,
         launch.actions.RegisterEventHandler(
             event_handler=launch.event_handlers.OnProcessExit(
                 target_action=webots,
