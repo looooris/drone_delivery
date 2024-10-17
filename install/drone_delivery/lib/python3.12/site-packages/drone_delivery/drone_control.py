@@ -12,6 +12,19 @@ class DroneDriver:
         self.__gps = self.__robot.getDevice('gps')
         self.__gyro = self.__robot.getDevice('gyro') # Sets up fundamental objects
 
+        # Propellers
+        self.__propellers = [
+            self.__robot.getDevice('front right propeller'),
+            self.__robot.getDevice('front left propeller'),
+            self.__robot.getDevice('rear right propeller'),
+            self.__robot.getDevice('rear left propeller')
+        ]
+        for propeller in self.__propellers:
+            propeller.setPosition(float('inf'))
+            propeller.setVelocity(0)
+
+        
+
         rclpy.init(args=None)
         self.__node = rclpy.create_node('control_'+self.__robot.name)
         self.__node.create_subscription(Twist, 'robot_control_' + self.__robot.name, self.__cmd_vel_callback, 1)
@@ -20,11 +33,13 @@ class DroneDriver:
     def __cmd_vel_callback(self, twist):
         self.__target_twist = twist
 
-    #def step(self):
-        #rclpy.spin_once(self.__node, timeout_sec=0)
+    def step(self):
+        rclpy.spin_once(self.__node, timeout_sec=0)
 
-        #forward_speed = self.__target_twist.linear.x
-        #angular_speed = self.__target_twist.angular.z
+        self.__propellers[0].setVelocity(-100)
+        self.__propellers[1].setVelocity(100)
+        self.__propellers[2].setVelocity(100)
+        self.__propellers[3].setVelocity(-100)
 
         #command_motor_left = (forward_speed - angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) / WHEEL_RADIUS
         #command_motor_right = (forward_speed + angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) / WHEEL_RADIUS

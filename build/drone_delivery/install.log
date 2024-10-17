@@ -1,6 +1,8 @@
+/home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery/touch.py
 /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery/__init__.py
 /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery/drone_control.py
 /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery/obstacle_avoider.py
+/home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery/__pycache__/touch.cpython-312.pyc
 /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery/__pycache__/__init__.cpython-312.pyc
 /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery/__pycache__/drone_control.cpython-312.pyc
 /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery/__pycache__/obstacle_avoider.cpython-312.pyc
@@ -17,3 +19,4 @@
 /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery-0.0.0-py3.12.egg-info/dependency_links.txt
 /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery-0.0.0-py3.12.egg-info/SOURCES.txt
 /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/drone_delivery/drone_control
+/home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/drone_delivery/touch

@@ -33,15 +33,15 @@ def generate_launch_description():
             respawn=True
         )
 
-
-    obstacle_avoider = Node(
+    touch = Node(
         package='drone_delivery',
-        executable='obstacle_avoider',
+        executable='touch',
     )
 
     return LaunchDescription([
         webots,
         drone_control,
+        touch,
         launch.actions.RegisterEventHandler(
             event_handler=launch.event_handlers.OnProcessExit(
                 target_action=webots,

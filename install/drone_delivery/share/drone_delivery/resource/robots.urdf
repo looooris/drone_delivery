@@ -4,6 +4,7 @@
         <device reference="ds1" type="cameraSlot">
             <ros>
                 <topicName>/camera</topicName>
+                <enabled>true</enabled>
                 <alwaysOn>true</alwaysOn>
             </ros>
         </device>
