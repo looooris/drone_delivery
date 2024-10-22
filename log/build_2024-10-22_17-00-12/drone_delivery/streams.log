@@ -1,0 +1,26 @@
+[1.869s] Invoking command in '/home/loris/Documents/Projects/ROS2/drone_delivery': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/loris/Documents/Projects/ROS2/drone_delivery/build/drone_delivery/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base build/drone_delivery build --build-base /home/loris/Documents/Projects/ROS2/drone_delivery/build/drone_delivery/build install --record /home/loris/Documents/Projects/ROS2/drone_delivery/build/drone_delivery/install.log --single-version-externally-managed install_data
+[2.530s] running egg_info
+[2.594s] writing build/drone_delivery/drone_delivery.egg-info/PKG-INFO
+[2.602s] writing dependency_links to build/drone_delivery/drone_delivery.egg-info/dependency_links.txt
+[2.602s] writing entry points to build/drone_delivery/drone_delivery.egg-info/entry_points.txt
+[2.609s] writing requirements to build/drone_delivery/drone_delivery.egg-info/requires.txt
+[2.609s] writing top-level names to build/drone_delivery/drone_delivery.egg-info/top_level.txt
+[2.719s] reading manifest file 'build/drone_delivery/drone_delivery.egg-info/SOURCES.txt'
+[2.722s] adding license file 'LICENSE'
+[2.724s] writing manifest file 'build/drone_delivery/drone_delivery.egg-info/SOURCES.txt'
+[2.725s] running build
+[2.727s] running build_py
+[2.727s] copying drone_delivery/drone_control.py -> /home/loris/Documents/Projects/ROS2/drone_delivery/build/drone_delivery/build/lib/drone_delivery
+[2.730s] running install
+[2.754s] running install_lib
+[2.807s] copying /home/loris/Documents/Projects/ROS2/drone_delivery/build/drone_delivery/build/lib/drone_delivery/drone_control.py -> /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery
+[2.811s] byte-compiling /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery/drone_control.py to drone_control.cpython-312.pyc
+[2.812s] running install_data
+[2.815s] running install_egg_info
+[2.872s] removing '/home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery-0.0.0-py3.12.egg-info' (and everything under it)
+[2.875s] Copying build/drone_delivery/drone_delivery.egg-info to /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery-0.0.0-py3.12.egg-info
+[2.880s] running install_scripts
+[3.235s] Installing drone_control script to /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/drone_delivery
+[3.236s] Installing touch script to /home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/drone_delivery
+[3.238s] writing list of installed files to '/home/loris/Documents/Projects/ROS2/drone_delivery/build/drone_delivery/install.log'
+[3.304s] Invoked command in '/home/loris/Documents/Projects/ROS2/drone_delivery' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/loris/Documents/Projects/ROS2/drone_delivery/build/drone_delivery/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base build/drone_delivery build --build-base /home/loris/Documents/Projects/ROS2/drone_delivery/build/drone_delivery/build install --record /home/loris/Documents/Projects/ROS2/drone_delivery/build/drone_delivery/install.log --single-version-externally-managed install_data

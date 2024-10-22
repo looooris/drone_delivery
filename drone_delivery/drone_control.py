@@ -1,69 +1,93 @@
 import rclpy
 from geometry_msgs.msg import Twist
-from controller import GPS, Gyro, InertialUnit
+from controller import Robot
 
 #HALF_DISTANCE_BETWEEN_WHEELS = 0.045
 #WHEEL_RADIUS = 0.025
 TAKEOFF_VELOCITY = 75
 
+def clamp(value, value_min, value_max):
+    return min(max(value, value_min), value_max)
+
 class DroneDriver:
     def init(self, webots_node, properties):
-        self.__robot = webots_node.robot
+        self.robot = webots_node.robot
+        self.time_step = 8
+        self.name = "drone1"
 
-        self.__camera = self.__robot.getDevice('camera')
-        self.__gps = self.__robot.getDevice('gps')
-        self.__internalcomputer = self.__robot.getDevice('inertial unit')
-        self.__gyro = self.__robot.getDevice('gyro') # Sets up fundamental objects
+        # Initalise and enable sensors
+        self.camera = self.robot.getDevice('camera')
+        self.gps = self.robot.getDevice('gps')
+        self.computer = self.robot.getDevice('inertial unit')
+        self.gyro = self.robot.getDevice('gyro') 
 
-        self.__gps.enable('1')
-        self.__gyro.enable('1')
-        self.__internalcomputer.enable('1')
+        self.gps.enable(self.time_step)
+        self.gyro.enable(self.time_step)
+        self.computer.enable(self.time_step)
 
-        # Initalise Propellers
-        self.__propellerList = [
-            self.__robot.getDevice('front right propeller'),
-            self.__robot.getDevice('front left propeller'),
-            self.__robot.getDevice('rear right propeller'),
-            self.__robot.getDevice('rear left propeller')
-        ]
+        # Initalise propellers
+        self.frp = self.robot.getDevice('front right propeller')
+        self.flp = self.robot.getDevice('front left propeller')
+        self.rrp = self.robot.getDevice('rear right propeller')
+        self.rlp = self.robot.getDevice('rear left propeller')
+        self.__propellerList = [self.frp, self.flp, self.rrp, self.rlp]
+
         for propeller in self.__propellerList:
             propeller.setPosition(float('inf'))
             propeller.setVelocity(0)
 
-        rclpy.init(args=None)
-        self.__node = rclpy.create_node('control_'+self.__robot.name)
-        self.__node.create_subscription(Twist, 'robot_control_' + self.__robot.name, self.__cmd_vel_callback, 1)
+        self.current_pose = 6 * [0]  # X, Y, Z, yaw, pitch, roll
+        self.target_position = [0, 0, 0]
+        self.target_index = 0
+        self.target_altitude = 0
+
+        # Configure ROS interface
+        rclpy.init()
+        self.subscription = rclpy.create_node('driver_'+self.name) 
+        self.subscription.create_subscription(Twist, 'cmd_vel_' + self.name, self.__cmd_vel_callback, 1)
         #self.__node.create_subscription(None, 'cmd_vel', self.__cmd_vel_callback, 1)
 
     def __cmd_vel_callback(self, twist):
         self.__target_twist = twist
 
     def step(self):
-        rclpy.spin_once(self.__node, timeout_sec=0)
+        rclpy.spin_once(self.subscription, timeout_sec=0)
 
         #Where is the drone?
-        droneRoll, dronePitch, droneYaw = self.__internalcomputer.getRollPitchYaw()
-        positionX, positionY, vertical = self.__gps.getValues()
-        droneVelocity = self.__gps.getSpeed()
-        rollVelocity, pitchVelocity, yawVelocity = self.__gyro.getValues()
-        #print("Roll, Pitch, Yaw: " + str(droneRoll) + str(dronePitch) + str(droneYaw))
-        #print("PosX, PosY, Vertical" + str(positionX) + str(positionY) + str(vertical))
+        droneRoll, dronePitch, droneYaw = self.computer.getRollPitchYaw()
+        positionX, positionY, vertical = self.gps.getValues()
+        droneVelocity = self.gps.getSpeed()
+        rollVelocity, pitchVelocity, yawVelocity = self.gyro.getValues()
+        print("Roll, Pitch, Yaw: " + str(droneRoll) + str(dronePitch) + str(droneYaw))
+        print("PosX, PosY, Vertical" + str(positionX) + str(positionY) + str(vertical))  
 
         if vertical < 25:
-            self.__propellerList[0].setVelocity(-75) # Front Right
-            self.__propellerList[1].setVelocity(70) # Front Left
-            self.__propellerList[2].setVelocity(75) # Rear Right
-            self.__propellerList[3].setVelocity(-75) # Rear Left
-        else:
-            self.__propellerList[0].setVelocity(0) # Front Right
-            self.__propellerList[1].setVelocity(0) # Front Left
-            self.__propellerList[2].setVelocity(0) # Rear Right
-            self.__propellerList[3].setVelocity(0) # Rear Left
+            roll_input = 50 * clamp(droneRoll, -1, 1) + rollVelocity
+            pitch_input = 30.0 * clamp(dronePitch, -1, 1) + pitchVelocity
+            yaw_input = 0
+            clamped_difference_altitude = clamp(self.target_altitude - vertical + 0.6, -1, 1)
+            vertical_input = 3.0 * pow(clamped_difference_altitude, 3.0)
+
+            front_left_motor_input = 70 + vertical_input - yaw_input + pitch_input - roll_input
+            front_right_motor_input = 70 + vertical_input + yaw_input + pitch_input + roll_input
+            rear_left_motor_input = 70 + vertical_input + yaw_input - pitch_input - roll_input
+            rear_right_motor_input = 70 + vertical_input - yaw_input - pitch_input + roll_input
+            self.__propellerList[0].setVelocity(-front_right_motor_input) # Front Right
+            self.__propellerList[1].setVelocity(front_left_motor_input) # Front Left
+            self.__propellerList[2].setVelocity(rear_right_motor_input) # Rear Right
+            self.__propellerList[3].setVelocity(-rear_left_motor_input) # Rear Left
+        if vertical > 25:
+            self.__propellerList[0].setVelocity(-68.5) # Front Right
+            self.__propellerList[1].setVelocity(68.5) # Front Left
+            self.__propellerList[2].setVelocity(68.5) # Rear Right
+            self.__propellerList[3].setVelocity(-68.5) # Rear Left
 
 def main():
     rclpy.init()
     robotControl = DroneDriver()
+    print("Here!")
     rclpy.spin(robotControl)
+    #robotControl.moveRobot()
     robotControl.destroy_node()
     rclpy.shutdown()
 
