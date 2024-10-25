@@ -4,7 +4,7 @@ package_name = 'drone_delivery'
 data_files = []
 data_files.append(('share/ament_index/resource_index/packages', ['resource/' + package_name]))
 data_files.append(('share/' + package_name + '/launch', ['launch/robot_launch.py']))
-data_files.append(('share/' + package_name + '/worlds', ['worlds/exampleWorld.wbt']))
+data_files.append(('share/' + package_name + '/worlds', ['worlds/droneSimulationWorld.wbt']))
 data_files.append(('share/' + package_name + '/resource', ['resource/robots.urdf']))
 data_files.append(('share/' + package_name, ['package.xml']))
 

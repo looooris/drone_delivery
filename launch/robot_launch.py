@@ -22,7 +22,7 @@ def generate_launch_description():
     robot_description_path = os.path.join(package_dir, 'resource', 'robots.urdf')
 
     webots = WebotsLauncher(
-        world=os.path.join(package_dir, 'worlds', 'exampleWorld.wbt')
+        world=os.path.join(package_dir, 'worlds', 'droneSimulationWorld.wbt')
     )
 
     drone_control = WebotsController(

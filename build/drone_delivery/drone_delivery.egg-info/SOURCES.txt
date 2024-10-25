@@ -20,4 +20,5 @@ resource/robots.urdf
 test/test_copyright.py
 test/test_flake8.py
 test/test_pep257.py
+worlds/droneSimulationWorld.wbt
 worlds/exampleWorld.wbt
