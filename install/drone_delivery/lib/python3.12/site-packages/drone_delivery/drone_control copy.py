@@ -38,6 +38,7 @@ class DroneDriver:
     def __cmd_vel_callback(self, twist):
         self.__target_twist = twist
 
+
     def step(self):
         rclpy.spin_once(self.__node, timeout_sec=0)
 
@@ -60,13 +61,9 @@ class DroneDriver:
             self.__propellerList[2].setVelocity(0) # Rear Right
             self.__propellerList[3].setVelocity(0) # Rear Left
 
-def main():
-    rclpy.init()
-    robotControl = DroneDriver()
-    rclpy.spin(robotControl)
-    robotControl.destroy_node()
-    rclpy.shutdown()
+rclpy.init()
+robotControl = DroneDriver()
+rclpy.spin(robotControl)
+robotControl.destroy_node()
+rclpy.shutdown()
 
-
-if __name__ == '__main__':
-    main()

@@ -23,7 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'drone_control = drone_delivery.drone_control:main',
-            'touch = drone_delivery.touch:main',
+            'schedule = drone_delivery.location_publisher:main'
         ],
     },
 )

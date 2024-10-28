@@ -12,8 +12,7 @@ build/drone_delivery/drone_delivery.egg-info/zip-safe
 drone_delivery/__init__.py
 drone_delivery/drone_control copy.py
 drone_delivery/drone_control.py
-drone_delivery/obstacle_avoider.py
-drone_delivery/touch.py
+drone_delivery/location_publisher.py
 launch/robot_launch.py
 resource/drone_delivery
 resource/robots.urdf
