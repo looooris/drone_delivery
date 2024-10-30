@@ -18,7 +18,7 @@ sudo apt-get install ros-jazzy-webots-ros2
 
 To run, clone this repository into a folder within your ROS2 workspace.
 
-Open a terminal and source your ROS installation. Then run:
+Open a terminal at the root of your clone of this repository, and source your ROS installation. Then run:
 
 ```
 colcon build
