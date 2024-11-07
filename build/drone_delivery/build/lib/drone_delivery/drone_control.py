@@ -1,6 +1,6 @@
 import rclpy
 from geometry_msgs.msg import Twist, Point
-from example_interfaces.srv import SetBool
+from webots_ros2_msgs.srv import GetBool
 from controller import Robot
 
 #HALF_DISTANCE_BETWEEN_WHEELS = 0.045
@@ -15,12 +15,13 @@ class DroneDriver:
         self.time_step = 1
         self.name = "drone_one"
 
-        # Initalise and enable sensors
+        # Initalise sensors
         self.camera = self.robot.getDevice('camera')
         self.gps = self.robot.getDevice('gps')
         self.computer = self.robot.getDevice('inertial unit')
         self.gyro = self.robot.getDevice('gyro') 
 
+        # Enable sensors
         self.camera.enable(self.time_step)
         self.gps.enable(self.time_step)
         self.gyro.enable(self.time_step)
@@ -31,20 +32,25 @@ class DroneDriver:
         self.flp = self.robot.getDevice('front left propeller')
         self.rrp = self.robot.getDevice('rear right propeller')
         self.rlp = self.robot.getDevice('rear left propeller')
-        self.__propellerList = [self.frp, self.flp, self.rrp, self.rlp]
+        self.propList = [self.frp, self.flp, self.rrp, self.rlp]
 
-        for propeller in self.__propellerList:
+        # Set initial velocity to zero
+        for propeller in self.propList:
             propeller.setPosition(float('inf'))
             propeller.setVelocity(0)
 
-        self.targetZ = 0
-        self.targetX = 0
-        self.targetY = 0
-        self.itemGrabbed = False
-        self.launchable = False
-        self.atTarget = False
+        self.target_altitude = 0
+        self.lin_x_int = 0
+        self.lin_y_int = 0
 
-        self.__target_twist = Twist()
+        self.item_grabbed = False # Robot metadata
+        self.launchable = False
+        self.at_target = False
+
+        self.robot_target = Twist()
+        self.vertical_ref = 1
+
+        #self.__target_twist = Twist()
 
         # Configure ROS interface
         rclpy.init(args=None)
@@ -52,136 +58,130 @@ class DroneDriver:
         self.subscription.create_subscription(Twist, self.name + '/cmd_vel', self.__cmd_vel_callback, 1)
         self.subscription.create_subscription(Point, 'goto_robot', self.listener_position, 1)
 
-        self.robotservice = rclpy.create_node(self.name + "_listen")
-        picker_service = self.robotservice.create_service(SetBool, 'item_picker', self.item_picker)
+        #self.voicing = rclpy.create_node('publisher_'+self.name) 
+        self.metadata_publisher = self.subscription.create_publisher(Point, 'robot_metadata', 1)
+        self.subscription.create_timer(1, self.metadata_pub)
 
     def __cmd_vel_callback(self, twist):
-        self.__target_twist = twist
+        self.robot_target = twist
 
     def locateDrone(self):
         internalComputerValues = self.computer.getRollPitchYaw()
         gpsValues = self.gps.getValues()
         droneVelocity = self.gps.getSpeed()
-        gyroValues = rollVelocity, pitchVelocity, yawVelocity = self.gyro.getValues()
+        gyroValues = self.gyro.getValues()
         return internalComputerValues, gpsValues, gyroValues, droneVelocity
 
-    def item_picker(self, request, response):
-        response = SetBool()
-        response.data = self.launchable
-        return response
+    def metadata_pub(self):
+        msg = Point()
+        if self.launchable:
+            msg.x = float(1) # Launchable
+        else:
+            msg.x = float(0)
+        if self.item_grabbed:
+            msg.y = float(1) # Item Grabbed
+        else:
+            msg.y = float(0)
+        if self.at_target: 
+            msg.z = float(1) # At Target
+        else:
+            msg.z = float(0)
+        self.metadata_publisher.publish(msg)
 
     def bindValue(self, value):
         return min(max(value, -1), 1)
 
     def listener_position(self, msg):
-        self.targetX = msg.x
-        self.targetY =  msg.y
-        self.targetZ = msg.z + 3 # this needs to calculate +3 from either higher start or end, but not constantly update
-        #print(msg.x, msg.y, msg.z)
+        self.robot_target.linear.x = msg.x
+        self.robot_target.linear.y =  msg.y
+        #if msg.z < 0:
+            #raise Exception("Z cannot be less than 0")
+        self.robot_target.linear.z = msg.z # this needs to calculate +3 from either higher start or end, but not constantly update
+        self.target_altitude = max(3, msg.z)
+        print(msg.x, msg.y, msg.z)
 
-    def goToLocation(self, targetLocation):
-        # Pick up item
-        for waypoint in targetLocation:
-            gpsValues = self.gps.getValues() # Initial Drone Location
-            self.targetZ = (max(gpsValues[2], waypoint[2])) + 3
-            #print(max(gpsValues[2], waypoint[2]) +3)
-            print("bello!")
-            self.targetX = gpsValues[0]
-            self.targetY = gpsValues[1]
-            while abs(self.gps.getValues()[2] - self.targetZ) > 0.25: # Get to height
-                rclpy.spin_once(robotControl)
+    def calcPitchRoll(self, gps):
+        diff_x = gps[0] - self.robot_target.linear.x
+        # 0 - 2
+        diff_y = gps[1] - self.robot_target.linear.y
 
-            self.targetX = waypoint[0]
-            self.targetY = waypoint[1]
-            while abs(self.gps.getValues[0] - self.targetX) > 0.05 and abs(self.gps.getValues[1] - self.targetY) > 0.05: # Go to destination
-                rclpy.spin_once(robotControl)
+        rm = 0
+        pm = 0
 
+        if diff_x > 0:
+            pm = max(-1, -diff_x)
+        elif diff_x < 0:
+            pm = min(1, -diff_x)
 
-            self.targetZ = waypoint[2] # lower to target
-            while abs(self.gps.getValues()[2] - self.targetZ) > 0.25: # Lower height
-                rclpy.spin_once(robotControl)
-        
-        #drop item
+        if diff_y > 0:
+            rm = min(1, diff_y)
+        elif diff_y < 0:
+            rm = max(-1, diff_y)
 
+        return rm, pm
 
-    #def step(self):
-        #print("bello!")
-
-    def step(self): #having difficulties with the name 'step'...io
+    def step(self): 
         rclpy.spin_once(self.subscription, timeout_sec=0)
-        self.__target_twist = Twist()
-        if self.launchable:
-            #self.targetX = 2
-            #self.targetY = 2
-            #self.targetZ = 2
-            #print(self.targetX, self.targetY, self.targetZ)
-            #print(self.gps.getValues()[2] - self.targetZ)
+        #self.__target_twist = Twist()
+        intComVal, gpsVal, gyroVal, droneVelocity = self.locateDrone()
+        if self.launchable: # Robot is in a launchable state
+            roll_move = 0
+            pitch_move = 0
+            vertical_input = 0
+            fineControl = True
+            if abs(gpsVal[1] - self.robot_target.linear.y) < 0.25 and abs(gpsVal[0] - self.robot_target.linear.x) < 0.25: # Robot is at position
+                if abs(gpsVal[2] - self.robot_target.linear.z) < 0.1:
+                    # i = 50
+                    # while abs(gpsVal[2] - self.robot_target.linear.z) < 0.1:
+                    #     self.killProp(i)
+                    #     i -= 1
+                    #self.killProp(0)
+                    self.at_target = True
+                    #self.launchable = False
+                    print("Robot is at its target :3")
+                    for propeller in self.propList:
+                        propeller.setVelocity(0)
+                    fineControl = False
+                   
+                else:   
+                    if gpsVal[2] > self.robot_target.linear.z:
+                        print('Robot is at position but needs to decend')
+                    else:
+                        print('Robot is at position but needs to ascend')
+                    self.target_altitude = min(self.robot_target.linear.z, 0)
+                    roll_move, pitch_move = self.calcPitchRoll(gpsVal)
+                    
+                    vertical_input = clamp(self.target_altitude-gpsVal[2], -5, -2)
+                
+            elif gpsVal[2] < self.target_altitude: # Robot is not yet at height
+                print('Robot is not yet at height')
+                vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
+            else: 
+                roll_move, pitch_move = self.calcPitchRoll(gpsVal)
+                vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0                
+                #print(diff_x, diff_y)
+                #print(pitch_move)
+                      
+            # Mathematical calculations - based upon https://github.com/cyberbotics/webots_ros2/blob/master/webots_ros2_mavic/webots_ros2_mavic/mavic_driver.py and used with Apache 2.0 Licence
+            if fineControl:
+                    roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0] + roll_move
+                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + pitch_move
+                    yaw_input = 2 * (self.robot_target.angular.z - gyroVal[2])
 
-            #Where is the drone?
-            intComVal, gpsVal, gyroVal, droneVelocity = self.locateDrone()
+                    # Robot propeller settings
+                    self.frp.setVelocity(-(70 + vertical_input + yaw_input + pitch_input + roll_input)) # Front Right
+                    self.flp.setVelocity(70 + vertical_input - yaw_input + pitch_input - roll_input) # Front Left
+                    self.rrp.setVelocity(70 + vertical_input - yaw_input - pitch_input + roll_input) # Rear Right
+                    self.rlp.setVelocity(-(70 + vertical_input + yaw_input - pitch_input - roll_input)) # Rear Left
+                    #Read target from topic?
 
-            #Read target from topic?
-
-            forward = None
-            right = None
-
-            # X Positioning
-            if abs(gpsVal[0] - self.targetX) > 0.25:
-                xMovement = gpsVal[0] - self.targetX
-                if xMovement < 0:
-                    right = True
-                else:
-                    right = False
-            # Y Positioning
-            if abs(gpsVal[1] - self.targetY) > 0.25:
-                yMovement = gpsVal[1] - self.targetY
-                if yMovement < 0:
-                    forward = True
-                else:
-                    forward = False
-            
-            
-            #print("Roll, Pitch, Yaw: " + str(intComVal[0]) + " " + str(intComVal[1]) + " " + str(intComVal[2]))
-            #print("PosX, PosY, PosZ: " + str(gpsVal[0]) + " " + str(gpsVal[1]) + " " + str(gpsVal[2]))
-            
-
-            roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0] 
-            pitch_input = 30.0 * clamp(intComVal[1], -1, 1) + gyroVal[1]
-            yaw_input = 2 * (self.__target_twist.angular.z - gyroVal[2])
-            clamped_difference_altitude = clamp(self.targetZ - gpsVal[2] + 0.6, -1, 1)
-            vertical_input = 3.0 * clamped_difference_altitude**3.0
-
-
-            if gpsVal[2] > self.targetZ - 0.25 and abs(self.targetX - gpsVal[0]) > 0.5:
-                #print("Forward, Right: "+ str(forward) + " " + str(right)) 
-                if right:
-                    pitch_input = pitch_input - 1
-                else:
-                    pitch_input = pitch_input + 1
-                if forward:
-                    roll_input = roll_input - 1
-                else:
-                    roll_input = roll_input + 1
-
-            front_left_motor_input = 70 + vertical_input - yaw_input + pitch_input - roll_input
-            front_right_motor_input = 70 + vertical_input + yaw_input + pitch_input + roll_input
-            rear_left_motor_input = 70 + vertical_input + yaw_input - pitch_input - roll_input
-            rear_right_motor_input = 70 + vertical_input - yaw_input - pitch_input + roll_input
-            self.frp.setVelocity(-front_right_motor_input) # Front Right
-            self.flp.setVelocity(front_left_motor_input) # Front Left
-            self.rrp.setVelocity(rear_right_motor_input) # Rear Right
-            self.rlp.setVelocity(-rear_left_motor_input) # Rear Left
-
-            #self.__propellerList[0].setVelocity(-100) # Front Right
-            #self.__propellerList[1].setVelocity(100) # Front Left
-            #self.__propellerList[2].setVelocity(100) # Rear Right
-            #self.__propellerList[3].setVelocity(-100) # Rear Left
         else:
-            #print("picking up item...")
-            if self.gps.getValues()[2] < 0.25:
+            if gpsVal[2] < 0.25: # drone on da ground !
+                print("picking up item...")
                 self.launchable = True
+                self.item_grabbed = True # Need to check if item is available at location
             else:
-                print("the drone isn't launchable")
+                print("the drone isn't launchable. it's not on the ground")
 
 def main():
     #rclpy.init(args=None)
