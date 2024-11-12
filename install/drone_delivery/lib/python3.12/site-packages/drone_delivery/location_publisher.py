@@ -77,7 +77,7 @@ class MetadataClient(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    data = [[0,-5,0]]
+    data = [[5,5,0]]
     dir_pub = DirectionPublisher(data[0])
     robot_data = MetadataClient()
     while robot_data.return_metadata()[0] == False:
