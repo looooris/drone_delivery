@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <robot name="Mavic2">
     <webots>
-        <device reference="ds1" type="cameraSlot">
+        <device reference="ds1" type="DistanceSensor">
             <ros>
-                <topicName>/camera</topicName>
+                <topicName>/distsense</topicName>
                 <enabled>true</enabled>
                 <alwaysOn>true</alwaysOn>
             </ros>
