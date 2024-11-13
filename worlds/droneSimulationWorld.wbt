@@ -154,7 +154,7 @@ Mavic2Pro {
   name "drone_one"
   controller "<extern>"
   supervisor TRUE
-  cameraSlot [
+  bodySlot [
     DistanceSensor {
       numberOfRays 1
       type "laser"
