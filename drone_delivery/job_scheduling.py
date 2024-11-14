@@ -65,11 +65,11 @@ class MaxHeuristic():
     def h(self, state):
         # modify heuristic to calculate more accurately
         # double distance_left? most drones have to do at least 1 trip to the house and 1 trip back to the pharmacy
-        # factor in actions
-        distance_left = sum(self.manhatten_distance(box.pickup_pos, box.dropoff_pos) for inventory in state.inventories for box in inventory)
+        # factor in box priorities too
+        box_distance_left = sum(self.manhatten_distance(box.pickup_pos, box.dropoff_pos) for inventory in state.inventories for box in inventory)
         boxes_undelivered = sum(len(inventory) for inventory in state.inventories)
         
-        heuristic = distance_left + boxes_undelivered
+        heuristic = box_distance_left + boxes_undelivered
         return heuristic
 
     
