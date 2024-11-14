@@ -147,10 +147,10 @@ class DroneDriver:
             distance, angle = self.calcAngleDist(gpsVal, intComVal)
             roll_move, pitch_move = self.calcPitchRoll(gpsVal)
             
-            if abs(gpsVal[1] - self.robot_target.linear.y) < 2 and abs(gpsVal[0] - self.robot_target.linear.x) < 2: # Robot is at position
-                
+            #if abs(gpsVal[1] - self.robot_target.linear.y) < 0.5 and abs(gpsVal[0] - self.robot_target.linear.x) < 0.5: # Robot is at position
+            if distance < 1:   
                 # need to adjust for the direction the robot faces
-                if abs(gpsVal[1] - self.robot_target.linear.y) < 0.25 and abs(gpsVal[0] - self.robot_target.linear.x) < 0.25:
+                if abs(gpsVal[1] - self.robot_target.linear.y) < 0.5 and abs(gpsVal[0] - self.robot_target.linear.x) < 0.5:
                     if abs(gpsVal[2] - self.robot_target.linear.z) < 0.1:
                         self.at_target = True
                         for propeller in self.propList:
@@ -160,27 +160,34 @@ class DroneDriver:
                         if gpsVal[2] > self.robot_target.linear.z:
                             #print('Robot is at position but needs to decend')
                             self.target_altitude = min(self.robot_target.linear.z, 0)
-                            vertical_input = clamp(self.target_altitude-gpsVal[2], -5, -2   )
+                            vertical_input = clamp(self.target_altitude-gpsVal[2], -5, -2)
                         else:
                             #print('Robot is at position but needs to ascend') 
                             vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0    
                 if not fineControl:      
-                    roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0] + roll_move
-                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] - pitch_move
-                    yaw_input = 2 * (self.robot_target.angular.z - gyroVal[2])
+                    yaw_input = 0.6 * angle / (2 * math.pi)     
+                    roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
+                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(
+                        math.log10(abs(angle)), -1, 0.1)
                                                  
                       
             # Mathematical calculations - based upon https://github.com/cyberbotics/webots_ros2/blob/master/webots_ros2_mavic/webots_ros2_mavic/mavic_driver.py and used with Apache 2.0 Licence
             else:
                 vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0 
                 if abs(angle) > 0.2:
-                    yaw_input = 0.6 * angle / (2 * math.pi)     
+                    vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0 
+                    yaw_input = 1 * angle / (2 * math.pi)     
                     roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
-                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1]
+                    #pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1]
+                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(
+                        math.log10(abs(angle)), -1, 0.1)
                 else:
-                    yaw_input = 0.6 * angle / (2 * math.pi)     
+                    vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0 
+                    yaw_input = 0.4 * angle / (2 * math.pi)     
                     roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
-                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + max(-distance, -1)                
+                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(
+                        math.log10(abs(angle)), -1, 0.1)
+                    #pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + max(-distance, -1)                
 
             if not fineControl:
                 # Robot propeller settings
