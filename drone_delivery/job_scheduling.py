@@ -16,21 +16,21 @@ def generate_actions(state, locations):
     #drone: id, position, status
     #inventory: [Box(pl, dl), Box(pl, dl)]
     #merge all inventory lists
-    box_ids = [box.box_id for inventory in state.inventories for box in inventory]
+    boxes = [box for inventory in state.inventories for box in inventory]
 
     # return list of possible actions
     for drone_id in state.drones.keys():
         # get combinations of pairs of locations unless pl == pharmacy and fl == house
         for start_pos, end_pos in combinations(locations, 2):
             # can't move from house to house
-            if start_pos.type == 'H' and end_pos.type == 'H':
+            if not (start_pos.type == 'H' and end_pos.type == 'H'):
                 # move from pickup to dropoff location
                 actions.append(Move(drone_id, start_pos, end_pos))
                 # move the other way
                 actions.append(Move(drone_id, end_pos, start_pos))
-        for box_id in box_ids:
-            actions.append(Pickup(drone_id, box_id))
-            actions.append(Dropoff(drone_id, box_id))
+        for box in boxes:
+            actions.append(Pickup(drone_id, box))
+            actions.append(Dropoff(drone_id, box))
 
     return actions
 
@@ -48,7 +48,7 @@ class MultiAgentJobScheduling():
 
     def at_goal(self, state):
         # return if inventories are all empty and drone statuses are None
-        return all(inventory == [] for inventory in state.inventories) and all(drone.status == None for drone in state.drones)
+        return all(len(inventory) == 0 for inventory in state.inventories) and all(drone.status == None for drone in state.drones)
 
 
 class MaxHeuristic():
@@ -57,8 +57,24 @@ class MaxHeuristic():
 	objects_undelivered = sum(len(inventory) for inventory in inventories.values())
 	Return distance_heuristic + objects_undelivered
     """
-    def __init__(self, state):
+    def __init__(self, problem):
+        self.problem = problem
+        self.locations = problem.locations
         return 0
+    
+    def h(self, state):
+        # modify heuristic to calculate more accurately
+        # double distance_left? most drones have to do at least 1 trip to the house and 1 trip back to the pharmacy
+        # factor in actions
+        distance_left = sum(self.manhatten_distance(box.pickup_pos, box.dropoff_pos) for inventory in state.inventories for box in inventory)
+        boxes_undelivered = sum(len(inventory) for inventory in state.inventories)
+        
+        heuristic = distance_left + boxes_undelivered
+        return heuristic
+
+    
+    def manhatten_distance(start_pos, end_pos):
+        pass
 
 class Node:
     "A Node in a search tree."
@@ -106,7 +122,6 @@ class AStarPlanner():
                 return path_actions(node)
             
             # loop through all the possible actions to check which ones can be applied to the current state
-            # actions_added = 0
             for action in problem.get_actions():
 
                 # calculate next state only if the action leads to a valid state that
@@ -125,30 +140,73 @@ class AStarPlanner():
                         f = h + new_path_cost
                         # now that we've evaluated the new state, put it in closed list to prevent it being reevaluated
                         closed.append((f, Node(s1, node, action, new_path_cost)))
-                        
-                        #actions_added += 1
-            #print('actions_added '+str(actions_added))
         return None # No plan was found
 
 #example problem
 
 
-inventories = {}
-#importing house and pharmacy locations
-with open('locations.csv', newline='') as csvfile:
-    pharmacies, houses = [],[]
-    locations =  csv.reader(csvfile, delimiter=' ', quotechar='|')
-    location_id = 0
-    for row in locations:
-        cols = row.split(",")
-        if row[0] == "H": 
-            houses.append(House(location_id, (row[1],row[2],row[3])))
-        elif row[0] == "P":
-            pharmacies.append(Pharmacy(location_id, (row[1],row[2],row[3])))
-            inventories[(row[1],row[2],row[3])] = []
-            pass
 
-        location_id += 1
+#importing house and pharmacy locations
+def parse_ros_objects(csv_file):
+    # drone objeccts
+    drones = {}
+    # set of boxes for inventory at each pharmacy
+    inventories = {}
+    boxes = []
+    # manhole locations
+    locations = {}
+
+    # object pointers for object ids
+    location_id = 0
+    box_id = 0
+    drone_id = 0
+
+    with open(csv_file, newline='') as csvfile:
+        locations =  csv.reader(csvfile, delimiter=' ', quotechar='|')
+        
+        for row in locations:
+            col = row.split(",")
+            object_name = col[0]
+            pos = (col[1], col[2], col[3])
+
+            # ex: 'H,16,15,0'
+            if object_name == 'H': 
+                house = House(location_id, pos)
+                locations[pos] = house
+                location_id += 1
+                
+            # ex: 'P,-25,-25,0'
+            elif object_name == 'P':
+                pharmacy = Pharmacy(location_id, pos)
+                locations[pos] = pharmacy
+                inventories[pos] = {}
+                location_id += 1
+
+            # ex: 'B,-25,-25,0,16,15,0,None'
+            elif object_name == 'B':
+                dropoff_pos = (col[4], col[5], col[6])
+                priority = col[7]
+                box = Box(box_id, pos, dropoff_pos, priority)
+                boxes.append(box)
+                box_id += 1
+
+            # ex: 'D,0,0,0,None'
+            elif object_name == 'D':
+                status = col[4]
+                drone = Drone(drone_id, pos, status)
+                drones[drone_id] = drone
+                drone_id += 1
+            else:
+                pass
+
+    for box in boxes:
+        if inventories.get(box.pos):
+            inventories[box.pos].add(box)
+
+    return drones, inventories, locations
+
+
+
 
 # example with hardcoded ids and coordinates
 l1 = (2, 3, 3) #pharmacy
@@ -171,22 +229,15 @@ drones = {
     }
             
 # each location (pharmacy or house) will have a unique id
-inventory1 = {
-    # box_id or order_id, box object
-    0: box1, 
-    1: box2, 
-    2: box3
-    }
-inventory2 = {
-    3: box4, 
-    4: box5
-    }
+# box_id or order_id, box object
+inventory1 = {box1, box2, box3}
+inventory2 = {box4, box5}
 
 
 inventories = {
     #pharmacy_id, pharmacy.inventory
-    0: inventory1,
-    1: inventory2
+    l1: inventory1,
+    l2: inventory2
 }
 
 pharmacy1 = Pharmacy(0, l1)
@@ -202,6 +253,11 @@ locations = {
     l3: house1, 
     l4: house2
              }
+
+# parse object data from csv file
+# uncomment the line below to run
+#drones, inventories, locations = parse_ros_objects('locations.csv')
+
 
 initial_state = (drones, inventories)
 actions = generate_actions(initial_state, locations)
@@ -221,3 +277,6 @@ for action in plan:
 
     # returns (move name, next pos, box object)
     drones[drone_id].plan.append((action.name, resulting_state.drones[drone_id].pos, box))
+
+# extract the plans for each drone
+drone_action_plans = [(drone.drone_id, drone.plan) for drone in drones]
