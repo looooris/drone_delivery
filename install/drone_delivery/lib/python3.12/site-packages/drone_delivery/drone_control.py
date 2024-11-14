@@ -128,16 +128,17 @@ class DroneDriver:
         if (angleToMove >  math.pi):
             angleToMove -= 2 * math.pi
 
-        print("to Target")
-        print((math.atan2((diff_y),(diff_x)) * 180) / math.pi)
-        print("Current")
-        print((imu[2] * 180) / math.pi)
+        # print("to Target")
+        # print((math.atan2((diff_y),(diff_x)) * 180) / math.pi)
+        # print("Current")
+        # print((imu[2] * 180) / math.pi)
         return distance, angleToMove
 
     def step(self): 
         rclpy.spin_once(self.subscription, timeout_sec=0)
         #self.__target_twist = Twist()
         intComVal, gpsVal, gyroVal, droneVelocity, distSense = self.locateDrone()
+        print(distSense)
         if self.launchable: # Robot is in a launchable state
             roll_move = 0
             pitch_move = 0
@@ -183,7 +184,7 @@ class DroneDriver:
                         math.log10(abs(angle)), -1, 0.1)
                 else:
                     vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0 
-                    yaw_input = 0.4 * angle / (2 * math.pi)     
+                    yaw_input = 0.6 * angle / (2 * math.pi)     
                     roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
                     pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(
                         math.log10(abs(angle)), -1, 0.1)
