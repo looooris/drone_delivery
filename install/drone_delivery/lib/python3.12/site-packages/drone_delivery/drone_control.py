@@ -14,13 +14,13 @@ class DroneDriver:
         self.name = "drone_one"
 
         # Initalise sensors
-        self.distsensor = self.robot.getDevice('distance sensor')
+        self.distSense = self.robot.getDevice('distance sensor')
         self.gps = self.robot.getDevice('gps')
         self.computer = self.robot.getDevice('inertial unit')
         self.gyro = self.robot.getDevice('gyro') 
 
         # Enable sensors
-        self.distsensor.enable(self.time_step)
+        self.distSense.enable(self.time_step)
         self.gps.enable(self.time_step)
         self.gyro.enable(self.time_step)
         self.computer.enable(self.time_step)
@@ -57,7 +57,7 @@ class DroneDriver:
         self.subscription.create_subscription(Point, 'goto_robot', self.listener_position, 1)
 
         #self.voicing = rclpy.create_node('publisher_'+self.name) 
-        self.metadata_publisher = self.subscription.create_publisher(Point, 'robot_metadata', 1)
+        self.metadata_publisher = self.subscription.create_publisher(Point, 'robot_metadata', 10)
         self.subscription.create_timer(1, self.metadata_pub)
 
     def __cmd_vel_callback(self, twist):
@@ -68,9 +68,7 @@ class DroneDriver:
         gpsValues = self.gps.getValues()
         droneVelocity = self.gps.getSpeed()
         gyroValues = self.gyro.getValues()
-        distSense = self.distsensor.getValue()
-        print(distSense)
-        return internalComputerValues, gpsValues, gyroValues, droneVelocity, distSense
+        return internalComputerValues, gpsValues, gyroValues, droneVelocity
 
     def metadata_pub(self):
         msg = Point()
@@ -123,7 +121,7 @@ class DroneDriver:
     def step(self): 
         rclpy.spin_once(self.subscription, timeout_sec=0)
         #self.__target_twist = Twist()
-        intComVal, gpsVal, gyroVal, droneVelocity, distanceSensor = self.locateDrone()
+        intComVal, gpsVal, gyroVal, droneVelocity = self.locateDrone()
         if self.launchable: # Robot is in a launchable state
             roll_move = 0
             pitch_move = 0

@@ -27,8 +27,8 @@ WorldInfo {
   }
 }
 Viewpoint {
-  orientation -0.03132509357312057 -0.004229724205027985 0.9995002991224087 2.901671340011777
-  position 3.392038062517613 -0.9278446086075751 0.7513778181758477
+  orientation -0.1814640091827745 -0.14708388846721918 0.9723359209268556 4.392248001308437
+  position 0.8970894853958439 2.739156318206236 1.3256141045724672
   near 0.2
   follow "drone_one"
   followSmoothness 0.2
@@ -155,16 +155,18 @@ Mavic2Pro {
   controller "<extern>"
   supervisor TRUE
   bodySlot [
-    DistanceSensor {
-      numberOfRays 1
+    BallJoint {
+      endPoint DistanceSensor {
+        lookupTable [
+        0 1000 0
+        0.1 1000 0.1
+        0.2 400 0.1
+        0.3 50 0.1
+        0.5 30 0
+        1 0 0
+      ]
       type "laser"
-      resolution -1
-      lookupTable [ 0     1000  0,
-              0.1   1000  0.1,
-              0.2    400  0.1,
-              0.3     50  0.1,
-              0.37    30  0,
-              0.5 0 0   ]
+      }
     }
   ]
 }
