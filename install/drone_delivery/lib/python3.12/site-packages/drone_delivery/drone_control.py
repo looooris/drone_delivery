@@ -93,11 +93,10 @@ class DroneDriver:
     def listener_position(self, msg):
         self.robot_target.linear.x = msg.x
         self.robot_target.linear.y =  msg.y
-        #if msg.z < 0:
-            #raise Exception("Z cannot be less than 0")
+        if msg.z < 0:
+            raise Exception("Z cannot be less than 0")
         self.robot_target.linear.z = msg.z # this needs to calculate +3 from either higher start or end, but not constantly update
         self.target_altitude = max(3, msg.z)
-        #print(msg.x, msg.y, msg.z)
 
     def calcPitchRoll(self, gps):
         diff_x = gps[0] - self.robot_target.linear.x
@@ -108,14 +107,14 @@ class DroneDriver:
         pm = 0
 
         if diff_x > 0:
-            pm = max(-1.5, -diff_x)
+            pm = max(-1, -diff_x)
         elif diff_x < 0:
-            pm = min(1.5, -diff_x)
+            pm = min(1, -diff_x)
 
         if diff_y > 0:
-            rm = min(1.5, diff_y)
+            rm = min(1, diff_y)
         elif diff_y < 0:
-            rm = max(-1.5, diff_y)
+            rm = max(-1, diff_y)
 
         return rm, pm
 
@@ -143,40 +142,37 @@ class DroneDriver:
             roll_move = 0
             pitch_move = 0
             vertical_input = 0
-            fineControl = 0
+            fineControl = False
 
             distance, angle = self.calcAngleDist(gpsVal, intComVal)
-            print(distance)
-            #print(distSense)
-            print("===")
-
             roll_move, pitch_move = self.calcPitchRoll(gpsVal)
             
             if abs(gpsVal[1] - self.robot_target.linear.y) < 2 and abs(gpsVal[0] - self.robot_target.linear.x) < 2: # Robot is at position
-                fineControl = 1
+                
+                # need to adjust for the direction the robot faces
                 if abs(gpsVal[1] - self.robot_target.linear.y) < 0.25 and abs(gpsVal[0] - self.robot_target.linear.x) < 0.25:
                     if abs(gpsVal[2] - self.robot_target.linear.z) < 0.1:
                         self.at_target = True
                         for propeller in self.propList:
                             propeller.setVelocity(0)
-                        fineControl = 2
+                        fineControl = True
                     else:   
-                        
                         if gpsVal[2] > self.robot_target.linear.z:
                             #print('Robot is at position but needs to decend')
                             self.target_altitude = min(self.robot_target.linear.z, 0)
                             vertical_input = clamp(self.target_altitude-gpsVal[2], -5, -2   )
                         else:
-                            pass
                             #print('Robot is at position but needs to ascend') 
-                
-            elif gpsVal[2] < self.target_altitude: # Robot is not yet at height
-                vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
-            else: 
-                vertical_input = 0                
+                            vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0    
+                if not fineControl:      
+                    roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0] + roll_move
+                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] - pitch_move
+                    yaw_input = 2 * (self.robot_target.angular.z - gyroVal[2])
+                                                 
                       
             # Mathematical calculations - based upon https://github.com/cyberbotics/webots_ros2/blob/master/webots_ros2_mavic/webots_ros2_mavic/mavic_driver.py and used with Apache 2.0 Licence
-            if fineControl == 0:
+            else:
+                vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0 
                 if abs(angle) > 0.2:
                     yaw_input = 0.6 * angle / (2 * math.pi)     
                     roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
@@ -184,21 +180,14 @@ class DroneDriver:
                 else:
                     yaw_input = 0.6 * angle / (2 * math.pi)     
                     roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
-                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + max(-distance, -1)
-                  
-            elif fineControl == 1:
-                roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0] + roll_move
-                pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] - pitch_move
-                yaw_input = 2 * (self.robot_target.angular.z - gyroVal[2])
+                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + max(-distance, -1)                
 
-            if not fineControl == 2:
+            if not fineControl:
                 # Robot propeller settings
                 self.frp.setVelocity(-(70 + vertical_input + yaw_input + pitch_input + roll_input)) # Front Right
                 self.flp.setVelocity(70 + vertical_input - yaw_input + pitch_input - roll_input) # Front Left
                 self.rrp.setVelocity(70 + vertical_input - yaw_input - pitch_input + roll_input) # Rear Right
                 self.rlp.setVelocity(-(70 + vertical_input + yaw_input - pitch_input - roll_input)) # Rear Left
-
-
 
         else:
             if gpsVal[2] < 0.25: # drone on da ground !
@@ -212,8 +201,6 @@ def main():
     #rclpy.init(args=None)
     robotControl = DroneDriver()
     rclpy.spin(robotControl)
-    m = tkinter.Tk()
-    m.mainloop()
     robotControl.destroy_node()
     rclpy.shutdown()
 
