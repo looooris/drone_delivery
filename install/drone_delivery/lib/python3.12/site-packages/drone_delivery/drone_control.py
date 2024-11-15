@@ -143,6 +143,7 @@ class DroneDriver:
             roll_move = 0
             pitch_move = 0
             vertical_input = 0
+            yaw_input = 0
             fineControl = False
 
             distance, angle = self.calcAngleDist(gpsVal, intComVal)
@@ -166,29 +167,23 @@ class DroneDriver:
                             #print('Robot is at position but needs to ascend') 
                             vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0    
                 if not fineControl:      
-                    yaw_input = 0.6 * angle / (2 * math.pi)     
+                    #yaw_input = 0.8 * angle / (2 * math.pi)     
                     roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
-                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(
-                        math.log10(abs(angle)), -1, 0.1)
+                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(math.log10(abs(angle)), -0.2, 0.1)
                                                  
                       
             # Mathematical calculations - based upon https://github.com/cyberbotics/webots_ros2/blob/master/webots_ros2_mavic/webots_ros2_mavic/mavic_driver.py and used with Apache 2.0 Licence
             else:
-                vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0 
-                if abs(angle) > 0.2:
-                    vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0 
-                    yaw_input = 1 * angle / (2 * math.pi)     
-                    roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
-                    #pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1]
-                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(
-                        math.log10(abs(angle)), -1, 0.1)
+                vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
+                roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
+                if abs(angle) > 0.1:
+                    yaw_input = 2 * angle / (2 * math.pi)     
+                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1]
                 else:
-                    vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0 
-                    yaw_input = 0.6 * angle / (2 * math.pi)     
-                    roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
-                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(
-                        math.log10(abs(angle)), -1, 0.1)
-                    #pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + max(-distance, -1)                
+                    yaw_input = 1 * angle / (2 * math.pi)
+                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(math.log10(abs(angle)), -1, 0.1)
+  
+                   
 
             if not fineControl:
                 # Robot propeller settings
