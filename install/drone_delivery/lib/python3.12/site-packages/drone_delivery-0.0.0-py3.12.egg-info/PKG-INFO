@@ -1,8 +1,0 @@
-Metadata-Version: 2.1
-Name: drone-delivery
-Version: 0.0.0
-Summary: A drone delivery implementation in ROS2.
-Maintainer: Loris for Group 12
-Maintainer-email: l.giuliani.22@abdn.ac.uk
-License: Do not share or reuse this code.
-License-File: LICENSE
