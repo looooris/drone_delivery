@@ -13,6 +13,7 @@ setup.py
 drone_delivery/__init__.py
 drone_delivery/actions.py
 drone_delivery/drone_control.py
+drone_delivery/gripper_control.py
 drone_delivery/job_scheduling.py
 drone_delivery/location_publisher.py
 drone_delivery/objects.py

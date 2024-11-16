@@ -1,0 +1,10 @@
+# Custom Action for Drone Requests
+
+geometry_msgs/Point destination
+bool pharmacy 
+---
+# Goal
+bool at_target
+---
+# Feedback
+float32 distance_to_target

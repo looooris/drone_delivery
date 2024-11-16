@@ -1,90 +1,66 @@
 import rclpy
+from rclpy.action import ActionClient
 from geometry_msgs.msg import Point, Twist
 from rclpy.node import Node
-from std_msgs.msg import String
-from webots_ros2_msgs.srv import GetBool
+
+from drone_delivery_services.srv import Destination
 
 
 
 class DirectionPublisher(Node):
     def __init__(self, data):
-        super().__init__('minimal_publisher')
-        self.publisher_ = self.create_publisher(Point, 'goto_robot', 1)
-        timer_period = 10 # seconds
+        super().__init__('minimal_service')
+        self.service = self.create_service(Destination, 'drone_destination', self.destination_callback)
+        # self.publisher_ = self.create_publisher(Point, 'goto_robot', 1)
+        # timer_period = 10 # seconds
         self.data = data
-        #self.announce = False
-        self.create_timer(1, self.location_pub)
+        # #self.announce = False
+        # self.create_timer(1, self.location_pub)
+
+    def destination_callback(self, request, response):
+        self.get_logger().info('Goal requested')
+
+        if abs(request.currentposition.x - float(self.data[0][0])) < 0.5 and abs(request.currentposition.y - float(self.data[0][1])) < 0.5:
+            if len(self.data) > 0:
+                self.data.pop(0)
+
+            else:
+                self.get_logger().info('Robot finished')
+                raise Exception("Robot is finished.")
+                return response
+        
+        else:
+            self.get_logger().info('Requested when not at target')
+        
+        response.deliverylocation.x = float(self.data[0][0])
+        response.deliverylocation.y = float(self.data[0][1])
+        response.deliverylocation.z = float(self.data[0][2])
+        if self.data[0][3] == 1: 
+            response.pharmacy = True 
+        else: 
+            response.pharmacy = False
+        return response
     
-    def update_location(self, data):
-        self.data = data
-
-    def location_pub(self):
-        msg = Point()
-        msg.x = float(self.data[0])
-        msg.y = float(self.data[1])
-        msg.z = float(self.data[2])
-        self.publisher_.publish(msg)
-
-# class DirectionPublisher(Node):
-#     def __init__(self, data):
-#         super().__init__('minimal_publisher')
-#         self.publisher_ = self.create_publisher(Twist, 'drone_one/cmd_vel', 1)
-#         timer_period = 1 # seconds
-#         self.data = data
-#         #self.announce = False
-#         self.create_timer(1, self.location_pub)
-    
-#     def update_location(self, data):
-#         self.data = data
-
-#     def location_pub(self):
-#         msg = Twist()
-#         msg.linear.x = float(self.data[0])
-#         msg.linear.y = float(self.data[1])
-#         msg.linear.z = float(self.data[2])
-#         msg.angular.x = 0
-#         msg.angular.y = 0
-#         msg.angular.z = 0
-
-#         self.publisher_.publish(msg)
-
-class MetadataClient(Node):
-    def __init__(self):
-        super().__init__('minimal_subscriber')
-        self.subscription  = self.create_subscription(Point, 'robot_metadata', self.metadata_organiser, 1)
-        self.launchable = None
-        self.atTarget = None
-        self.itemGrabbed = None
-
-    def return_metadata(self):
-        print([self.launchable, self.itemGrabbed, self.atTarget])
-        return [self.launchable, self.itemGrabbed, self.atTarget]
-
-    def metadata_organiser(self, msg):
-        if msg.x > 0.5:
-            self.launchable = True
-        else:
-            self.launchable = False
-        if msg.y > 0.5:
-            self.itemGrabbed = True
-        else:
-            self.itemGrabbed = False
-        if msg.z > 0.5:
-            self.atTarget = True
-        else:
-            self.atTarget = False
 
 
 def main(args=None):
     rclpy.init(args=args)
-    data = [[-60.65, -27.63, 0]]
-    dir_pub = DirectionPublisher(data[0])
-    robot_data = MetadataClient()
-    while robot_data.return_metadata()[0] == False:
-         print("robot not ready to takeoff")
+    #data = [[-60.65, -27.63, 0, 0]]
+    #data = [[-45.65, 38.58, 0, 1],[30.55, -26.11, 0, 0], [0, 0, 0, 0]]
+    data = [[5, 5, 0, 1], [-5, -5, 0, 0], [0, 0, 0, 0]]
+    dir_pub = DirectionPublisher(data)
 
-    print(robot_data.return_metadata())
-    rclpy.spin(dir_pub)  
+    #dir_pub.send_goal()
+    
+    rclpy.spin(dir_pub)
+    # robot_data = MetadataClient()
+    # while robot_data.return_metadata()[0] == False:
+    #      print("robot not ready to takeoff")
+
+
+    # print(robot_data.return_metadata())
+    #
+    # rclpy.spin(dir_pub)  
     
 
     # # Destroy the node explicitly

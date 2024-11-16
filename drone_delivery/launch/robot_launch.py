@@ -29,9 +29,15 @@ def generate_launch_description():
         executable="schedule",
     )
 
+    grip = Node(
+        package="drone_delivery",
+        executable="grip",
+    )
+
     return LaunchDescription([
         webots,
         schedule,
+        grip,
         #webots._supervisor,
         #ros2_supervisor,
         drone_control,
