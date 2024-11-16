@@ -1,5 +1,0 @@
-  File "/home/loris/Documents/Projects/ROS2/drone_delivery/install/drone_delivery/lib/python3.12/site-packages/drone_delivery/drone_control.py", line 176
-    elif fineControl == 1 or fineControl == 0:
-    ^^^^
-SyntaxError: invalid syntax
-
