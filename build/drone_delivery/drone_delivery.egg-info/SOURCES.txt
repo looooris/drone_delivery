@@ -10,12 +10,13 @@ build/drone_delivery/drone_delivery.egg-info/requires.txt
 build/drone_delivery/drone_delivery.egg-info/top_level.txt
 build/drone_delivery/drone_delivery.egg-info/zip-safe
 drone_delivery/__init__.py
+drone_delivery/drone_control copy.py
 drone_delivery/drone_control.py
-drone_delivery/obstacle_avoider.py
+drone_delivery/location_publisher.py
 launch/robot_launch.py
 resource/drone_delivery
 resource/robots.urdf
 test/test_copyright.py
 test/test_flake8.py
 test/test_pep257.py
-worlds/exampleWorld.wbt
+worlds/droneSimulationWorld.wbt

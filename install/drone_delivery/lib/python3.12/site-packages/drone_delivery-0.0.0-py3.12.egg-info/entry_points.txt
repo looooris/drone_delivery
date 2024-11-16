@@ -1,2 +1,3 @@
 [console_scripts]
 drone_control = drone_delivery.drone_control:main
+schedule = drone_delivery.location_publisher:main
