@@ -16,7 +16,7 @@ sudo apt-get install ros-jazzy-webots-ros2
 ```
 ## Run
 
-To run, clone this repository into a folder within your ROS2 workspace.
+To run, clone this repository into a folder within your ROS2 workspace (usually /home/ros2-ws/ on Ubuntu).
 
 Open a terminal at the root of your clone of this repository, and source your ROS installation. Then run:
 
