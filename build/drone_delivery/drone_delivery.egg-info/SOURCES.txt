@@ -1,4 +1,5 @@
 LICENSE
+README.md
 package.xml
 setup.cfg
 setup.py
@@ -10,9 +11,11 @@ build/drone_delivery/drone_delivery.egg-info/requires.txt
 build/drone_delivery/drone_delivery.egg-info/top_level.txt
 build/drone_delivery/drone_delivery.egg-info/zip-safe
 drone_delivery/__init__.py
-drone_delivery/drone_control copy.py
+drone_delivery/actions.py
 drone_delivery/drone_control.py
+drone_delivery/job_scheduling.py
 drone_delivery/location_publisher.py
+drone_delivery/objects.py
 launch/robot_launch.py
 resource/drone_delivery
 resource/robots.urdf

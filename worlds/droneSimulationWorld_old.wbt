@@ -27,8 +27,8 @@ WorldInfo {
   }
 }
 Viewpoint {
-  orientation -0.19411089784452967 0.024761727473191837 0.9806670261564492 2.865175657382216
-  position 94.01241711940756 -18.76268032107727 56.0486543709475
+  orientation -0.03132509357312057 -0.004229724205027985 0.9995002991224087 2.901671340011777
+  position 3.392038062517613 -0.9278446086075751 0.7513778181758477
   near 0.2
   follow "drone_one"
   followSmoothness 0.2
@@ -43,18 +43,6 @@ Floor {
   tileSize 6 6
   appearance SandyGround {
   }
-}
-SquareManhole {
-  translation -60.65 -27.63 -0.03
-  name "House2"
-}
-SquareManhole {
-  translation 16.78 20.71 -0.03
-  name "House3"
-}
-SquareManhole {
-  translation -46 4.12 -0.03
-  name "House4"
 }
 Road {
   translation -43.8 9.2 0.01
@@ -97,15 +85,6 @@ SmallManor {
 }
 SquareManhole {
   translation 0 0 -0.03
-  name "Pharm1"
-}
-SquareManhole {
-  translation 30.55 -26.11 -0.03
-  name "House1"
-}
-SquareManhole {
-  translation -45.65 38.58 -0.03
-  name "Pharm2"
 }
 CardboardBox {
   translation -0.730157 -1.22891 0.3
@@ -187,4 +166,3 @@ Mavic2Pro {
     }
   ]
 }
-

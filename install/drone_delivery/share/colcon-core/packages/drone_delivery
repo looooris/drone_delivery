@@ -1,1 +1,1 @@
-geometry_msgs:rclpp:rclpy:rosidl_default_runtime:webots_ros2_driver
+builtin_interfaces:geometry_msgs:rclpp:rclpy:rosidl_default_runtime:webots_ros2_driver
