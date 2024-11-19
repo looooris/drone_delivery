@@ -41,15 +41,16 @@ class DroneDriver:
             propeller.setPosition(float('inf'))
             propeller.setVelocity(0)
 
-        self.target_altitude = 0
-        self.lin_x_int = 0
-        self.lin_y_int = 0
+        
 
         # Robot metadata
         self.is_gripper_open = True 
         self.launchable = False
         self.at_target = False
+
+        # Destination metadata
         self.robot_target = Point()
+        self.target_altitude = 0
         self.to_pharmacy = False
 
         # Configure ROS interface
@@ -60,10 +61,8 @@ class DroneDriver:
         self.destrequest = Destination.Request()
         self.griprequest = Gripper.Request()
         while not self.destination_client.wait_for_service(timeout_sec=1.0) or not self.gripper_client.wait_for_service(timeout_sec=1.0):
-            self.subscription.get_logger().info('service not available, waiting again...')
+            self.subscription.get_logger().info('service(s) not available, waiting again...')
 
-        
-    
     def sendRequest(self):
         gpsValues = self.gps.getValues()
         self.destrequest.currentposition.x = gpsValues[0]
@@ -86,7 +85,7 @@ class DroneDriver:
         if data.deliverylocation.z < 0:
             raise Exception("Z cannot be less than 0")
         self.robot_target.z = data.deliverylocation.z
-        self.target_altitude = max(3, data.deliverylocation.z)
+        self.target_altitude = max(3, data.deliverylocation.z + 3)
         self.to_pharmacy = data.pharmacy
         self.subscription.get_logger().info('New Robot Target: '+ str(self.robot_target.x) + ' ' + ' ' + str(self.robot_target.y) + ' ' + ' ' + str(self.robot_target.z) + ' ' + ' ' + str(self.to_pharmacy))
         
@@ -97,33 +96,6 @@ class DroneDriver:
         gyroValues = self.gyro.getValues()
         distSense = self.distanceSensor.getValue()
         return internalComputerValues, gpsValues, gyroValues, droneVelocity, distSense
-
-    # def metadata_pub(self):
-    #     msg = Point()
-    #     if self.launchable:
-    #         msg.x = float(1) # Launchable
-    #     else:
-    #         msg.x = float(0)
-    #     if self.is_gripper_open:
-    #         msg.y = float(1) # Item Grabbed
-    #     else:
-    #         msg.y = float(0)
-    #     if self.at_target: 
-    #         msg.z = float(1) # At Target
-    #     else:
-    #         msg.z = float(0)
-    #     self.metadata_publisher.publish(msg)
-
-    # def bindValue(self, value):
-    #     return min(max(value, -1), 1)
-
-    # def listener_position(self, msg):
-    #     self.robot_target.x = msg.x
-    #     self.robot_target.y =  msg.y
-    #     if msg.z < 0:
-    #         raise Exception("Z cannot be less than 0")
-    #     self.robot_target.z = msg.z # this needs to calculate +3 from either higher start or end, but not constantly update
-    #     self.target_altitude = max(3, msg.z)
 
     def calcPitchRoll(self, gps):
         diff_x = gps[0] - self.robot_target.x
@@ -208,14 +180,27 @@ class DroneDriver:
                       
             # Mathematical calculations - based upon https://github.com/cyberbotics/webots_ros2/blob/master/webots_ros2_mavic/webots_ros2_mavic/mavic_driver.py and used with Apache 2.0 Licence
             else:
-                vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
-                roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
-                if abs(angle) > 0.1:
-                    yaw_input = 2 * angle / (2 * math.pi)     
+                #self.subscription.get_logger().info('Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
+                if distSense > 30:
+                    self.target_altitude += 0.5
+                    roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
                     pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1]
                 else:
-                    yaw_input = 1 * angle / (2 * math.pi)
-                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(math.log10(abs(angle)), -1, 0.1)          
+                    # if robot is clear but still has a lot to travel upwards, cancel the upwards movement
+                    if distSense == 0 and abs(self.target_altitude - gpsVal[2]) > 2 and self.target_altitude != 3:
+                        if self.target_altitude != self.robot_target.z + 3:
+                            self.subscription.get_logger().info('New target altitude at ' + str(gpsVal[2]) + ' Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
+                            self.target_altitude = gpsVal[2]
+                    if abs(angle) > 0.1:
+                        yaw_input = 2 * angle / (2 * math.pi)     
+                        pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1]
+                    else:
+                        yaw_input = 1 * angle / (2 * math.pi)
+                        pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(math.log10(abs(angle)), -1, 0.1)      
+
+                vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
+                roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
+  
 
             if not fineControl:
                 # Robot propeller settings
@@ -225,23 +210,16 @@ class DroneDriver:
                 self.rlp.setVelocity(-(70 + vertical_input + yaw_input - pitch_input - roll_input)) # Rear Left
 
         else:
-            if gpsVal[2] < 0.25: # drone on da ground !
-                print("picking up item...")
-                response = self.sendRequest()
-                if response is not None:
-                    self.updateTarget(response)
+            if gpsVal[2] < 0.25: # drone on the ground
+                response = None
+                while response is None:
+                    response = self.sendRequest()
 
-                
-
-
-                    time.sleep(5)
-
-               
-
+                self.updateTarget(response)              
                 self.launchable = True 
 
             else:
-                print("the drone isn't launchable. it's not on the ground")
+                raise Exception("The drone isn't launchable, it's not on the ground")
 
 def main():
     #rclpy.init(args=None)

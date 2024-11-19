@@ -14,7 +14,6 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/project
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/trees/protos/Pine.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/trees/protos/Forest.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/robots/dji/mavic/protos/Mavic2Pro.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/buildings/protos/UBuilding.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/advertising_board/protos/AdvertisingBoard.proto"
 
 WorldInfo {
@@ -46,6 +45,7 @@ Floor {
   appearance SandyGround {
   }
 }
+
 AdvertisingBoard {
   translation -57.8899 -25.3256 0
   rotation 0 0 1 0.523599
@@ -183,13 +183,17 @@ Mavic2Pro {
   supervisor TRUE
   bodySlot [
     DistanceSensor {
+      lookupTable [
+        0 1000 0
+        0.1 1000 0.1
+        0.2 400 0.1
+        0.3 100 0.1
+        0.5 50 0
+        1 40 0
+        2 30 0
+        3 0 0
+      ]
       type "laser"
-      lookupTable[ 0     1000  0,
-              0.1   1000  0.1,
-              0.2    400  0.1,
-              0.3     50  0.1,
-              0.37    30  0,
-              0.5     0   0   ]
     }
   ]
 }

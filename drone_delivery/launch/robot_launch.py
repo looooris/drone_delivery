@@ -10,13 +10,13 @@ def generate_launch_description():
     package_dir = get_package_share_directory('drone_delivery')
     robot_description_path = os.path.join(package_dir, 'resource', 'robots.urdf')
 
+    # Webots Simulation Load
     webots = WebotsLauncher(
         world=os.path.join(package_dir, 'worlds', 'droneSimulationWorld.wbt'),
         #ros2_supervisor= True
     )
 
-    #ros2_supervisor = Ros2SupervisorLauncher()
-
+    # Drone Control Node
     drone_control = WebotsController(
             robot_name="drone_one",
             parameters=[
@@ -24,22 +24,23 @@ def generate_launch_description():
             ],
         )
 
+    # Location Publisher Node
     schedule  = Node(
         package="drone_delivery",
         executable="schedule",
     )
 
+    # Gripper Control Node
     grip = Node(
         package="drone_delivery",
         executable="grip",
     )
 
+    # Launch Nodes
     return LaunchDescription([
         webots,
         schedule,
         grip,
-        #webots._supervisor,
-        #ros2_supervisor,
         drone_control,
         launch.actions.RegisterEventHandler(
             event_handler=launch.event_handlers.OnProcessExit(

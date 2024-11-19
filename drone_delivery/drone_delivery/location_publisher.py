@@ -2,6 +2,7 @@ import rclpy
 from rclpy.action import ActionClient
 from geometry_msgs.msg import Point, Twist
 from rclpy.node import Node
+import time
 
 from drone_delivery_services.srv import Destination
 
@@ -17,11 +18,12 @@ class DirectionPublisher(Node):
         # #self.announce = False
         # self.create_timer(1, self.location_pub)
 
-    def destination_callback(self, request, response):
+    async def destination_callback(self, request, response):
         self.get_logger().info('Goal requested')
+        #time.sleep(5)
 
         if abs(request.currentposition.x - float(self.data[0][0])) < 0.5 and abs(request.currentposition.y - float(self.data[0][1])) < 0.5:
-            if len(self.data) > 0:
+            if len(self.data) > 1:
                 self.data.pop(0)
 
             else:
@@ -45,30 +47,16 @@ class DirectionPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    #data = [[-60.65, -27.63, 0, 0]]
-    #data = [[-45.65, 38.58, 0, 1],[30.55, -26.11, 0, 0], [0, 0, 0, 0]]
-    data = [[5, 5, 0, 1], [-5, -5, 0, 0], [0, 0, 0, 0]]
-    dir_pub = DirectionPublisher(data)
 
-    #dir_pub.send_goal()
+    # do path calculations
+    #     
+    data = [[-60, 15, 0, 1], [0, 0, 0, 0]]
+    dir_pub = DirectionPublisher(data)
     
     rclpy.spin(dir_pub)
-    # robot_data = MetadataClient()
-    # while robot_data.return_metadata()[0] == False:
-    #      print("robot not ready to takeoff")
 
-
-    # print(robot_data.return_metadata())
-    #
-    # rclpy.spin(dir_pub)  
-    
-
-    # # Destroy the node explicitly
-    # # (optional - otherwise it will be done automatically
-    # # when the garbage collector destroys the node object)
-    # dir_pub.destroy_node()
-    # robot_data.destory_node()
-    # rclpy.shutdown()
+    dir_pub.destory_node()
+    rclpy.shutdown()
 
 
 if __name__ == '__main__':
