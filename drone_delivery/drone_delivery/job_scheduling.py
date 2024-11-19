@@ -206,77 +206,86 @@ def parse_ros_objects(csv_file):
     return drones, inventories, locations
 
 
+def generate_plan(drones, inventories, locations):
+    initial_state = (drones, inventories)
+    actions = generate_actions(initial_state, locations)
+
+    pb = MultiAgentJobScheduling(initial_state, actions, locations)
+    planner = AStarPlanner(problem=pb)
+    plan = planner.solve()
+
+    resulting_state = initial_state
+    # curate list of tasks for each drone
+    for action in plan:
+        drone_id = action.drone_id
+        box = resulting_state.drones[drone_id].status
+        
+        resulting_state = action.apply(resulting_state)
+        next_pos = resulting_state.drones[drone_id].pos
+
+        # returns (move name, next pos, box object)
+        drones[drone_id].plan.append((action.name, next_pos, box))
+
+    # extract the plans for each drone
+    drone_action_plans = [(drone.drone_id, drone.plan) for drone in drones]
+    return drone_action_plans
 
 
-# example with hardcoded ids and coordinates
-l1 = (2, 3, 3) #pharmacy
-l2 = (6, 3, 1) #Pharmacy
-l3 = (4, 2, 7) #house
-l4 = (2, 0, 1) #House
 
-# pickup location, dropoff location, priority status (default is none)
-box1 = Box(0, l1, l3)
-box2 = Box(1, l1, l3, 'urgent')
-box3 = Box(2, l1, l4)
-box4 = Box(3, l2, l3)
-box5 = Box(4, l2, l4)
+def example_hardcoded_params():
+    # example with hardcoded ids and coordinates
+    l1 = (2, 3, 3) #pharmacy
+    l2 = (6, 3, 1) #Pharmacy
+    l3 = (4, 2, 7) #house
+    l4 = (2, 0, 1) #House
 
-drones = {
-    # done_id, pos (x, y, z), status (object or none)
-    0: Drone(0, (1, 1, 1)),
-    1: Drone(1, (1, 2, 2), box1),
-    2: Drone(2, (1, 4, 3), box2)
+    # pickup location, dropoff location, priority status (default is none)
+    box1 = Box(0, l1, l3)
+    box2 = Box(1, l1, l3, 'urgent')
+    box3 = Box(2, l1, l4)
+    box4 = Box(3, l2, l3)
+    box5 = Box(4, l2, l4)
+
+    drones = {
+        # done_id, pos (x, y, z), status (object or none)
+        0: Drone(0, (1, 1, 1)),
+        1: Drone(1, (1, 2, 2), box1),
+        2: Drone(2, (1, 4, 3), box2)
+        }
+                
+    # each location (pharmacy or house) will have a unique id
+    # box_id or order_id, box object
+    inventory1 = {box1, box2, box3}
+    inventory2 = {box4, box5}
+
+
+    inventories = {
+        #pharmacy_id, pharmacy.inventory
+        l1: inventory1,
+        l2: inventory2
     }
-            
-# each location (pharmacy or house) will have a unique id
-# box_id or order_id, box object
-inventory1 = {box1, box2, box3}
-inventory2 = {box4, box5}
+
+    pharmacy1 = Pharmacy(0, l1)
+    pharmacy2 = Pharmacy(1, l2)
+    house1 = House(2, l3)
+    house2 = House(3, l4)
 
 
-inventories = {
-    #pharmacy_id, pharmacy.inventory
-    l1: inventory1,
-    l2: inventory2
-}
-
-pharmacy1 = Pharmacy(0, l1)
-pharmacy2 = Pharmacy(1, l2)
-house1 = House(2, l3)
-house2 = House(3, l4)
+    locations = {
+        # (x, y, z), location object
+        l1: pharmacy1, 
+        l2: pharmacy2, 
+        l3: house1, 
+        l4: house2
+                }
+    return drones, inventories, locations
 
 
-locations = {
-    # (x, y, z), location object
-    l1: pharmacy1, 
-    l2: pharmacy2, 
-    l3: house1, 
-    l4: house2
-             }
-
-# parse object data from csv file
-# uncomment the line below to run
+# example reading from csv file. uncomment the line below to get params
 #drones, inventories, locations = parse_ros_objects('locations.csv')
 
+# example with hardcoded values. uncomment the line below to get params
+drones, inventories, locations = example_hardcoded_params()
 
-initial_state = (drones, inventories)
-actions = generate_actions(initial_state, locations)
-
-pb = MultiAgentJobScheduling(initial_state, actions, locations)
-planner = AStarPlanner(problem=pb)
-plan = planner.solve()
-
-resulting_state = initial_state
-# curate list of tasks for each drone
-for action in plan:
-    drone_id = action.drone_id
-    box = resulting_state.drones[drone_id].status
-    
-    resulting_state = action.apply(resulting_state)
-    next_pos = resulting_state.drones[drone_id].pos
-
-    # returns (move name, next pos, box object)
-    drones[drone_id].plan.append((action.name, resulting_state.drones[drone_id].pos, box))
-
-# extract the plans for each drone
-drone_action_plans = [(drone.drone_id, drone.plan) for drone in drones]
+# get list of tasks for each drone
+drone_action_plans = generate_plan(drones, inventories, locations)
