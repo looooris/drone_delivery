@@ -8,7 +8,7 @@ from drone_delivery_services.srv import Destination
 
 class DirectionPublisher(Node):
     def __init__(self, data):
-        super().__init__('minimal_service')
+        super().__init__('direction_publisher')
 
         self.service = self.create_service(Destination, 'drone_destination_service', self.destination_callback)
         self.data = data
@@ -35,8 +35,8 @@ class DirectionPublisher(Node):
                     self.data[1].pop(0)
                 else:
                     #self.get_logger().info('Robot finished')
-                    response.deliverylocation.x = float(0)
-                    response.deliverylocation.y = float(0)
+                    response.deliverylocation.x = float(1)
+                    response.deliverylocation.y = float(1)
                     response.deliverylocation.z = float(0)
                     response.pharmacy = False
                     return response

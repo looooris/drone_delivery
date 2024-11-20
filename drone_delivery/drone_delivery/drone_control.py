@@ -175,7 +175,7 @@ class DroneDriver:
             # Mathematical calculations - based upon https://github.com/patrickpbarroso/drone-simulation
             else:
                 #self.subscription.get_logger().info('Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
-                if distSense > 30: 
+                if distSense > 50: 
                     # ascends if foreign object detected within 30 units (2m)
                     self.target_altitude += 0.5
                     roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
