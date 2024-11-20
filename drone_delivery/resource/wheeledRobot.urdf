@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<robot name="PharmBot">
+        <webots>
+                <plugin type="drone_delivery.wheeled_control.PharmDriver"/>
+        </webots>
+</robot>
+

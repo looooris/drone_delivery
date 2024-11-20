@@ -1,15 +1,15 @@
 class Drone():
-    def __init__(self, drone_id, pos, status=None):
+    def __init__(self, drone_id, pos, status=None, plan=[]):
         self.drone_id = drone_id
         self.pos = pos
         self.status = status
-        self.plan = []
+        self.plan = plan
 
     def has_object(self):
         return self.status != None
     
-    def clone(cls, drone):
-        return Drone(drone.drone_id, drone.pos[:], drone.status, drone.plan)
+    def clone(self):
+        return Drone(drone_id=self.drone_id, pos=self.pos[:], status=self.status, plan=self.plan)
 
     
 class Box():

@@ -4,7 +4,8 @@ package_name = 'drone_delivery'
 data_files = []
 data_files.append(('share/ament_index/resource_index/packages', ['resource/' + package_name]))
 data_files.append(('share/' + package_name + '/launch', ['launch/robot_launch.py']))
-data_files.append(('share/' + package_name + '/worlds', ['worlds/droneSimulationWorld.wbt']))
+data_files.append(('share/' + package_name + '/worlds', ['worlds/droneSimulationWorldOne.wbt']))
+data_files.append(('share/' + package_name + '/worlds', ['worlds/droneSimulationWorldTwo.wbt']))
 data_files.append(('share/' + package_name + '/resource', ['resource/robots.urdf']))
 data_files.append(('share/' + package_name, ['package.xml']))
 
@@ -23,8 +24,10 @@ setup(
     entry_points={
         'console_scripts': [
             'drone_control = drone_delivery.drone_control:main',
-            'schedule = drone_delivery.location_publisher:main',
-            'grip = drone_delivery.gripper_control:main'
+            'schedule_one = drone_delivery.location_publisher_one:main',
+            'schedule_two = drone_delivery.location_publisher_two:main',
+            'grip_one = drone_delivery.gripper_control_one:main',
+            'grip_two = drone_delivery.gripper_control_two:main',
         ],
     },
 )

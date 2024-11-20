@@ -1,27 +1,6 @@
 <?xml version="1.0"?>
 <robot name="Mavic2">
     <webots>
-        <device reference="ds1" type="DistanceSensor">
-            <ros>
-                <topicName>/distanceSensor</topicName>
-                <enabled>true</enabled>
-                <alwaysOn>true</alwaysOn>
-            </ros>
-        </device>
-        <device reference="ds2" type="gps">
-            <ros>
-                <topicName>/gps</topicName>
-                <enabled>true</enabled>
-                <alwaysOn>true</alwaysOn>
-            </ros>
-        </device>
-        <device reference="ds3" type="gyro">
-            <ros>
-                <topicName>/gyro</topicName>
-                <alwaysOn>true</alwaysOn>
-                <enabled>true</enabled>
-            </ros>
-        </device>
         <plugin type="drone_delivery.drone_control.DroneDriver"/>
     </webots>
 </robot>

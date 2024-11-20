@@ -1,7 +1,7 @@
 from queue import PriorityQueue
 import csv
-from actions import Move, Pickup, Dropoff, generate_actions
-from drone_delivery.objects import Drone, House, Pharmacy, Box
+from actions import Move, Pickup, Dropoff
+from objects import Drone, House, Pharmacy, Box
 from itertools import combinations
 
 # runs once at beginning of program
@@ -13,17 +13,24 @@ def generate_actions(state, locations):
     # fly to: (for all drones in state, add to list of actions)
 
     #iterate through drones and inventories
-    #drone: id, position, status
-    #inventory: [Box(pl, dl), Box(pl, dl)]
-    #merge all inventory lists
-    boxes = [box for inventory in state.inventories for box in inventory]
+    #state = (drones, inventories)
+
+    #drones (dictionary) = { drone_id: Drone(0, (1, 1, 1))},
+    #location_id (integer)
+
+    #inventories (dictionary) = {location_pos : inventory}
+    #location_pos (tuple) = (x, y, z)
+    #inventory (set) = {Box(pl, dl), Box(pl, dl)}
+
+    #merge all inventory sets
+    boxes = [box for inventory in state[1].values() for box in inventory]
 
     # return list of possible actions
-    for drone_id in state.drones.keys():
+    for drone_id in state[0].keys():
         # get combinations of pairs of locations unless pl == pharmacy and fl == house
         for start_pos, end_pos in combinations(locations, 2):
             # can't move from house to house
-            if not (start_pos.type == 'H' and end_pos.type == 'H'):
+            if not (locations[start_pos].type == 'H' and locations[end_pos].type == 'H'):
                 # move from pickup to dropoff location
                 actions.append(Move(drone_id, start_pos, end_pos))
                 # move the other way
@@ -48,7 +55,7 @@ class MultiAgentJobScheduling():
 
     def at_goal(self, state):
         # return if inventories are all empty and drone statuses are None
-        return all(len(inventory) == 0 for inventory in state.inventories) and all(drone.status == None for drone in state.drones)
+        return all(len(inventory) == 0 for inventory in state[1].values()) and all(drone.status == None for drone in state[0].values())
 
 
 class MaxHeuristic():
@@ -57,24 +64,40 @@ class MaxHeuristic():
 	objects_undelivered = sum(len(inventory) for inventory in inventories.values())
 	Return distance_heuristic + objects_undelivered
     """
-    def __init__(self, problem):
-        self.problem = problem
-        self.locations = problem.locations
-        return 0
+    def __init__(self):
+        pass
+
+    def __call__(self, state):
+        return self.h(state)
     
     def h(self, state):
         # modify heuristic to calculate more accurately
         # double distance_left? most drones have to do at least 1 trip to the house and 1 trip back to the pharmacy
         # factor in box priorities too
-        box_distance_left = sum(self.manhatten_distance(box.pickup_pos, box.dropoff_pos) for inventory in state.inventories for box in inventory)
-        boxes_undelivered = sum(len(inventory) for inventory in state.inventories)
+        total_distance = 0
+        #print('inventory length:',len(state[1]))
+        """
+        for id, inventory in state[1].items():
+            print('inventory id:',id)
+            for box in inventory:
+                total_distance += self.manhatten_distance(box.pickup_pos, box.dropoff_pos)
+
+        """
         
-        heuristic = box_distance_left + boxes_undelivered
+        box_distance_left = sum(self.manhatten_distance(box.pickup_pos, box.dropoff_pos) for inventory in state[1].values() for box in inventory)
+        #boxes_undelivered = sum(len(inventory) for inventory in state[1].values())
+        #box_distance_left = 0
+        
+        #heuristic = box_distance_left + boxes_undelivered
+        heuristic = box_distance_left
         return heuristic
 
     
-    def manhatten_distance(start_pos, end_pos):
-        pass
+    def manhatten_distance(self, start_pos, end_pos):
+        x1, y1, z1 = start_pos
+        x2, y2, z2 = end_pos
+
+        return abs(x1 - x2) + abs(y1 - y2) + abs(z1 - z2)
 
 class Node:
     "A Node in a search tree."
@@ -99,31 +122,49 @@ class AStarPlanner():
 
     # run multiple times during runtime to constantly have the most optimal route for each drone
     def solve(self, problem):
-        locations = problem.locations()
+        locations = problem.locations
         closed = []
         frontier = PriorityQueue()
 
         # calculate the initial heuristic value for the first state and add them to frontier
-        h = self.h(problem.state)
+        h = self.h(problem.initial_state)
         frontier.put((h, Node(problem.initial_state)))
 
         # execute while there are still nodes in the queue
         while not frontier.empty():
+            print('nodes in frontier:',len(frontier.queue))
+            """
+            print('Possible moves:')
+            for _, n in frontier.queue:
+                if n.action:
+                    n.action.describe_move(locations)
+            print()
+            """
+            
 
             # retrieve the node with the smallest f value
             f, node = frontier.get()
+            
             
             # assign the node's state to variable s
             s = node.state
 
             # if at goal, return current sequence of steps by backtracking
             if problem.at_goal(s):
-                #print("finishing solving")
+                print("finishing solving")
                 return path_actions(node)
             
             # loop through all the possible actions to check which ones can be applied to the current state
             for action in problem.get_actions():
-
+                """
+                print(f'*** describing {action.name} ***')
+                action.describe_move(locations)
+                print('*** describing the state ***')
+                action.describe_state(s, locations)
+                print('is applicable? ', action.applicable(s, locations))
+                print()
+                """
+                
                 # calculate next state only if the action leads to a valid state that
                 # satisfies both positive and negative preconditions
                 if action.applicable(s, locations):
@@ -138,8 +179,9 @@ class AStarPlanner():
                         # calculate the new heuristic value at the new state
                         h = self.h(s1)
                         f = h + new_path_cost
+                        frontier.put((f, Node(s1, node, action, new_path_cost)))
                         # now that we've evaluated the new state, put it in closed list to prevent it being reevaluated
-                        closed.append((f, Node(s1, node, action, new_path_cost)))
+                        closed.append(s1)
         return None # No plan was found
 
 #example problem
@@ -206,77 +248,187 @@ def parse_ros_objects(csv_file):
     return drones, inventories, locations
 
 
+def generate_plan(drones, inventories, locations):
+    initial_state = (drones, inventories)
+    actions = generate_actions(initial_state, locations)
 
+    pb = MultiAgentJobScheduling(initial_state, actions, locations)
+    planner = AStarPlanner()
+    plan = planner.solve(problem=pb)
 
-# example with hardcoded ids and coordinates
-l1 = (2, 3, 3) #pharmacy
-l2 = (6, 3, 1) #Pharmacy
-l3 = (4, 2, 7) #house
-l4 = (2, 0, 1) #House
+    resulting_state = initial_state
+    if plan is not None:
+        drone_action_plans = {}
+        # curate list of tasks for each drone
+        for action in plan:
+            drone_id = action.drone_id
+            print('drone id: '+str(drone_id))
 
-# pickup location, dropoff location, priority status (default is none)
-box1 = Box(0, l1, l3)
-box2 = Box(1, l1, l3, 'urgent')
-box3 = Box(2, l1, l4)
-box4 = Box(3, l2, l3)
-box5 = Box(4, l2, l4)
-
-drones = {
-    # done_id, pos (x, y, z), status (object or none)
-    0: Drone(0, (1, 1, 1)),
-    1: Drone(1, (1, 2, 2), box1),
-    2: Drone(2, (1, 4, 3), box2)
-    }
+            current_state = resulting_state
+            current_box_status = current_state[0][drone_id].status
             
-# each location (pharmacy or house) will have a unique id
-# box_id or order_id, box object
-inventory1 = {box1, box2, box3}
-inventory2 = {box4, box5}
+            resulting_state = action.apply(resulting_state)
+            resulting_box_status = resulting_state[0][drone_id].status
+            resulting_drone_pos = resulting_state[0][drone_id].pos
+            resulting_pos_type = locations[resulting_drone_pos].type
+
+            box_status = None
+            if current_box_status:
+                box_status = current_box_status
+            elif resulting_box_status:
+                box_status = resulting_box_status
+
+            # returns (move name, next pos, box object)
+            step = (action.name, resulting_pos_type, resulting_drone_pos, box_status)
+            drone_plan = drone_action_plans.get(drone_id)
+            if drone_plan:
+                drone_plan.append(step)
+            else:
+                drone_action_plans[drone_id] = [step]
+
+        # extract the plans for each drone
+        #drone_action_plans = [(drone.drone_id, drone.plan) for drone in drones.values()]
+        return drone_action_plans
+    
+    return None
 
 
-inventories = {
-    #pharmacy_id, pharmacy.inventory
-    l1: inventory1,
-    l2: inventory2
-}
+def print_plans(plans):
+    print('list of drone action plans:\n')
+    for drone_id, plan in plans.items():
+        print('drone_id: '+str(drone_id))
+        for step in plan:
+            action_name, resulting_pos_type, resulting_pos, box_status = step
+            if box_status: box_status = box_status.box_id
+            print(f'action name: {action_name}, next_pos ({resulting_pos_type}): {resulting_pos}, box status: {box_status}')
+        print()
 
-pharmacy1 = Pharmacy(0, l1)
-pharmacy2 = Pharmacy(1, l2)
-house1 = House(2, l3)
-house2 = House(3, l4)
+def example_hardcoded_params():
+    # example with hardcoded ids and coordinates
+    l1 = (2, 3, 3) #pharmacy
+    l2 = (6, 3, 1) #Pharmacy
+    l3 = (4, 2, 7) #house
+    l4 = (2, 0, 1) #House
+
+    # pickup location, dropoff location, priority status (default is none)
+    box1 = Box(0, l1, l3)
+    box2 = Box(1, l1, l3, 'urgent')
+    box3 = Box(2, l1, l4)
+    box4 = Box(3, l2, l3)
+    box5 = Box(4, l2, l4)
+
+    drones = {
+        # done_id, pos (x, y, z), status (box object or none)
+        0: Drone(0, (1, 1, 1)),
+        1: Drone(1, (1, 2, 2), box1),
+        2: Drone(2, (1, 4, 3), box2)
+        }
+                
+    # each location (pharmacy or house) will have a unique id
+    # box_id or order_id, box object
+    inventory1 = {box1, box2, box3}
+    inventory2 = {box4, box5}
 
 
-locations = {
-    # (x, y, z), location object
-    l1: pharmacy1, 
-    l2: pharmacy2, 
-    l3: house1, 
-    l4: house2
-             }
+    inventories = {
+        #pharmacy_id, pharmacy.inventory
+        l1: inventory1,
+        l2: inventory2
+    }
 
-# parse object data from csv file
-# uncomment the line below to run
+    pharmacy1 = Pharmacy(0, l1)
+    pharmacy2 = Pharmacy(1, l2)
+    house1 = House(2, l3)
+    house2 = House(3, l4)
+
+
+    locations = {
+        # (x, y, z), location object
+        l1: pharmacy1, 
+        l2: pharmacy2, 
+        l3: house1, 
+        l4: house2
+                }
+    return drones, inventories, locations
+
+
+def loris_example():
+    # example with hardcoded ids and coordinates
+   
+    l1 = (0, 0, 0) # Pharmacy
+    l2 = (45.65, 38.58, -0.03) # Pharmacy
+    l3 = (60.65, -27.63, -0.03) # House
+    l4 = (16.78, 20.71, -0.03) # House
+    l5 = (30.55, -26.11, -0.03) # House
+    l6 = (-46, 4.12, -0.03) # House
+
+    # box id, pickup location, dropoff location, priority status (default is none)
+    box1 = Box(0, l1, l3)
+    box2 = Box(1, l1, l4)
+    box3 = Box(2, l1, l4)
+    box4 = Box(3, l2, l5)
+    box5 = Box(4, l2, l6)
+
+    drones = {
+        # done_id, pos (x, y, z), status (box object or none)
+        0: Drone(0, l1),
+        1: Drone(1, l1)
+        }
+                
+    # each location (pharmacy or house) will have a unique id
+    # box_id or order_id, box object
+    #inventory is a set
+    inventory1 = {box1, box2, box3}
+    inventory2 = {box4, box5}
+
+
+    inventories = {
+        #pharmacy_id, pharmacy.inventory
+        l1: inventory1,
+        l2: inventory2
+    }
+
+    pharmacy1 = Pharmacy(0, l1)
+    pharmacy2 = Pharmacy(1, l2)
+    house1 = House(l3)
+    house2 = House(l4)
+    house3 = House(l5)
+    house4 = House(l6)
+
+
+    locations = {
+        # (x, y, z), location object
+        l1: pharmacy1, 
+        l2: pharmacy2, 
+        l3: house1, 
+        l4: house2,
+        l5: house3,
+        l6: house4
+                }
+    return drones, inventories, locations
+
+
+# example reading from csv file. uncomment the line below to get params
 #drones, inventories, locations = parse_ros_objects('locations.csv')
 
+# example with hardcoded values. uncomment the line below to get params
+#drones, inventories, locations = example_hardcoded_params()
 
-initial_state = (drones, inventories)
-actions = generate_actions(initial_state, locations)
+# example with hardcoded values. uncomment the line below to get params
+drones, inventories, locations = loris_example()
 
-pb = MultiAgentJobScheduling(initial_state, actions, locations)
-planner = AStarPlanner(problem=pb)
-plan = planner.solve()
+# get list of tasks for each drone
+drone_action_plans = generate_plan(drones, inventories, locations)
+print_plans(drone_action_plans)
 
-resulting_state = initial_state
-# curate list of tasks for each drone
-for action in plan:
-    drone_id = action.drone_id
-    box = resulting_state.drones[drone_id].status
-    
-    resulting_state = action.apply(resulting_state)
-    next_pos = resulting_state.drones[drone_id].pos
+"""
+input type:
 
-    # returns (move name, next pos, box object)
-    drones[drone_id].plan.append((action.name, resulting_state.drones[drone_id].pos, box))
+return type:
+actions (dict) = {
+    drone_id (int) : actions (list) [
+        action data (set) = ( action name (string), P or H (string), resulting_drone_pos (int tuple -> (x, y, z)), box_status (Box object or None) )
+    ]
+}
 
-# extract the plans for each drone
-drone_action_plans = [(drone.drone_id, drone.plan) for drone in drones]
+"""
