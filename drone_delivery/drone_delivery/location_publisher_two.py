@@ -14,11 +14,17 @@ class DirectionPublisher(Node):
         self.data = data
 
     async def destination_callback(self, request, response):
+        # index the unique part of the drone id eg. 'drone_one'. 'one' is at index 'drone_one'[6:9]
         drone_idy = request.droneid[6:len(request.droneid)]
+
+        # publishes first target location to drone 1 and second target location to drone 2
+        # eg. data[0] goes to drone 1 and data[1] goes to drone 2
         if drone_idy == "one":
             dataToPeek = 0
         else:
             dataToPeek = 1
+            
+        # if the drone is at or close enough to the ground, it has reached the delivery location
         if abs(request.currentposition.x - float(self.data[dataToPeek][0][0])) < 0.5 and abs(request.currentposition.y - float(self.data[dataToPeek][0][1])) < 0.5:
             if drone_idy == "one":
                 if len(self.data[0]) > 1:
