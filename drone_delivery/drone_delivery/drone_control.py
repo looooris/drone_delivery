@@ -51,7 +51,7 @@ class DroneDriver:
         # Configure ROS interface
         rclpy.init(args=None)
         self.subscription = rclpy.create_node('driver_'+self.robot.name) 
-        self.destination_client = self.subscription.create_client(Destination, self.robot.name + '_destination')
+        self.destination_client = self.subscription.create_client(Destination, 'drone_destination_service')
         self.gripper_client = self.subscription.create_client(Gripper, self.robot.name + '_gripper')
         self.destrequest = Destination.Request()
         self.griprequest = Gripper.Request()
@@ -61,6 +61,7 @@ class DroneDriver:
     # For sending a request to the location publisher. Sends current position and receives goal
     def sendRequest(self):
         gpsValues = self.gps.getValues()
+        self.destrequest.droneid = self.robot.name
         self.destrequest.currentposition.x = gpsValues[0]
         self.destrequest.currentposition.y = gpsValues[1]
         self.destrequest.currentposition.z = gpsValues[2]

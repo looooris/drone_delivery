@@ -422,13 +422,24 @@ drone_action_plans = generate_plan(drones, inventories, locations)
 print_plans(drone_action_plans)
 
 """
-input type:
+parses input into drones, inventories, and locations and feeds these into a planner to create an optimal plan for each drone
 
-return type:
+input types:
+Drone: drone id (string), current drone position (int tuple -> (x, y, z)), urgency? (int)
+Location: type (string -> P or H), position (int tuple -> (x, y, z))
+Box: pickup position (int tuple -> (x, y, z)), dropoff position (int tuple -> (x, y, z)), current position (int tuple -> (x, y, z)), urgency? (int)
+
+return types:
 actions (dict) = {
-    drone_id (int) : actions (list) [
+    drone_id (string) : actions (list) [
         action data (set) = ( action name (string), P or H (string), resulting_drone_pos (int tuple -> (x, y, z)), box_status (Box object or None) )
     ]
 }
+
+notes:
+
+things to randomize:
+drone initial positions: (0, 0, 0) or (1, 1, 0)
+box pickup and dropoff positions
 
 """
