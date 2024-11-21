@@ -6,9 +6,6 @@ import math
 
 from drone_delivery_services.srv import Destination, Gripper
     
-def clamp(value, value_min, value_max):
-    return min(max(value, value_min), value_max)
-
 class DroneDriver:
     def init(self, webots_node, properties):
         self.robot = webots_node.robot
@@ -100,7 +97,6 @@ class DroneDriver:
     # Calulates if the drone needs to increase or decrease pitch and roll
     def calcPitchRoll(self, gps):
         diff_x = gps[0] - self.robot_target.x
-        # 0 - 2
         diff_y = gps[1] - self.robot_target.y
 
         rm = 0
@@ -131,6 +127,15 @@ class DroneDriver:
 
         return distance, angleToMove
 
+    # returns a value bound by two other values
+    def bind(self, value, value_min, value_max):
+        if value < value_min:
+            return value_min
+        elif value > value_max:
+            return value_max
+        else:
+            return value
+
     def step(self): 
         rclpy.spin_once(self.subscription, timeout_sec=0)
         intComVal, gpsVal, gyroVal, droneVelocity, distSense = self.locateDrone()
@@ -158,44 +163,43 @@ class DroneDriver:
                         else:
                             if not self.is_gripper_open:
                                 self.sendGripRequest(True)  # opens gripper if destination is not pharmacy (drop off)
-                        
-
                     else:   
                         if gpsVal[2] > self.robot_target.z:
                             self.target_altitude = min(self.robot_target.z, 0)  # begins descent
-                            vertical_input = clamp(self.target_altitude-gpsVal[2], -4, -1)
+                            vertical_input = self.bind(self.target_altitude-gpsVal[2], -4, -1)
                         else:
-                            vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0    # begins ascent    
+                            vertical_input = 3.0 * self.bind(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0    # begins ascent    
                 if not fineControl:
                     yaw_input = 0.8 * angle / (2 * math.pi)     
-                    roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
-                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(math.log10(abs(angle)), -0.2, 0.1)
+                    roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
+                    pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1] + self.bind(math.log10(abs(angle)), -0.2, 0.1)
                                                  
                       
-            # Mathematical calculations - based upon https://github.com/patrickpbarroso/drone-simulation
             else:
                 #self.subscription.get_logger().info('Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
                 if distSense > 50: 
                     # ascends if foreign object detected within 30 units (2m)
                     self.target_altitude += 0.5
-                    roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
-                    pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1]
+                    roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
+                    pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1]
                 else:
                     # if robot is clear but still has a lot to travel upwards, cancel the upwards movement
                     if distSense == 0 and abs(self.target_altitude - gpsVal[2]) > 2 and self.target_altitude != 3:
                         if self.target_altitude != self.robot_target.z + 3:
                             self.subscription.get_logger().info('New target altitude at ' + str(gpsVal[2]) + ' Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
                             self.target_altitude = gpsVal[2]
+
+                    # Mathematical calculations - based upon https://github.com/patrickpbarroso/drone-simulation
                     if abs(angle) > 0.1:
                         yaw_input = 2 * angle / (2 * math.pi)
-                        pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1]
+                        pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1]
                     else:
                         #slows rotation
                         yaw_input = angle / (2 * math.pi)
-                        pitch_input = 30 * clamp(intComVal[1], -1, 1) + gyroVal[1] + clamp(math.log10(abs(angle)), -1, 0.1)      
+                        pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1] + self.bind(math.log10(abs(angle)), -1, 0.1)      
 
-                vertical_input = 3.0 * clamp(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
-                roll_input = 50 * clamp(intComVal[0], -1, 1) + gyroVal[0]
+                vertical_input = 3.0 * self.bind(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
+                roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
   
 
             if not fineControl:

@@ -8,9 +8,9 @@ from drone_delivery_services.srv import Destination
 
 class DirectionPublisher(Node):
     def __init__(self, data):
-        super().__init__('minimal_service')
+        super().__init__('direction_publisher')
 
-        self.service = self.create_service(Destination, 'drone_one_destination', self.destination_callback)
+        self.service = self.create_service(Destination, 'drone_destination_service', self.destination_callback)
         self.data = data
 
     async def destination_callback(self, request, response):
