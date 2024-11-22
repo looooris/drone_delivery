@@ -24,13 +24,13 @@ To run, clone this repository into the src folder within your ROS2 workspace.
 
 Note: If you have not created a workspace previously, you will need to create one: [Creating a ROS2 Workspace](https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Creating-A-Workspace/Creating-A-Workspace.html)
 
+
+Open a terminal in the src folder in your ROS2 workspace, and source your ROS installation.
 To source your ROS2 installation, use:
 ```
 source /opt/ros/jazzy/setup.bash
 ```
-
-Open a terminal in the src folder in your ROS2 workspace, and source your ROS installation. Then run:
-
+Then run:
 ```
 colcon build
 ```
