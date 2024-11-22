@@ -41,7 +41,7 @@ source install/local_setup.bash
 ros2 launch drone_delivery robot_launch.py
 ```
 
-The simulation will then ask if you would like to simulate one or two drones. After this, the program will open Webots and the simulation will begin.
+The terminal will then ask if you would like to simulate one or two drones. After this, the program will open Webots and the simulation will begin.
 
 ## Credits
 
