@@ -31,10 +31,11 @@ find_package(action_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "action/Drone.action"
   "srv/Destination.srv"
   "srv/Gripper.srv"
-  "msg/Droneloc.msg"
-  "msg/Emergency.msg"
+  "srv/Wheeled.srv"
+  "msg/Boolean.msg"
   DEPENDENCIES geometry_msgs
 )
 
