@@ -43,6 +43,8 @@ ros2 launch drone_delivery robot_launch.py
 
 The terminal will then ask if you would like to simulate one or two drones. After this, the program will open Webots and the simulation will begin.
 
+Note: Occassionally the program will run into errors on startup if re-launched from the same terminal. To solve this, close your terminal, delete the `build`, `install` & `log` folders from your ROS2 workspace, and follow the instructions above again.
+
 ## Credits
 
 Drone mathematics based upon example from the [Webots User Guide](https://cyberbotics.com/doc/guide/mavic-2-pro?version=R2022b) used under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).

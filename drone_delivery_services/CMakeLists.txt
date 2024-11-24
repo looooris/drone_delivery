@@ -36,6 +36,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/Gripper.srv"
   "srv/Wheeled.srv"
   "msg/Boolean.msg"
+  "msg/Droneloc.msg"
+  "msg/Emergency.msg"
   DEPENDENCIES geometry_msgs
 )
 
