@@ -40,6 +40,7 @@ class DroneDriver:
         self.is_gripper_open = True 
         self.launchable = False
         self.at_target = False
+        self.finished = False
 
         # Destination metadata
         self.robot_target = Point()
@@ -111,6 +112,7 @@ class DroneDriver:
 
     # Configures destination values
     def updateTarget(self, data):
+        self.finished = data.finished
         self.robot_target.x = data.deliverylocation.x
         self.robot_target.y =  data.deliverylocation.y
         if data.deliverylocation.z < 0:
@@ -174,7 +176,7 @@ class DroneDriver:
     def step(self): 
         rclpy.spin_once(self.subscription, timeout_sec=0)
         intComVal, gpsVal, gyroVal, droneVelocity, distSense = self.locateDrone()
-        if self.launchable: # Robot is in a launchable state
+        if self.launchable and not self.finished: # Robot is in a launchable state
             roll_move = 0
             pitch_move = 0
             vertical_input = 0
@@ -248,20 +250,19 @@ class DroneDriver:
                 self.rlp.setVelocity(-(70 + vertical_input + yaw_input - pitch_input - roll_input)) # Rear Left
 
         else:
-            if gpsVal[2] < 0.25: # drone on the ground
+            if gpsVal[2] < 0.25 and not self.finished: # drone on the ground
                 response = None
                 while response is None:
                     response = self.sendRequest()
-                    if response is None:
-                        time.wait(0.25)
-
-                # update target and relaunch robot
-                self.updateTarget(response)              
-                self.launchable = True 
-
+                    if response is not None:
+                        self.updateTarget(response)              
+                        self.launchable = True 
+                        break
+                 # update target and relaunch robot
+            elif self.finished:
+                pass
             else:
-                raise Exception("The drone isn't launchable, it's not on the ground")
-
+                self.subscription.get_logger().info(self.robot.name + " is not launchable but not on the ground!")
 def main():
     robotControl = DroneDriver()
     rclpy.spin(robotControl)
