@@ -47,4 +47,4 @@ Note: IF YOU ARE EDITING THE FILES! The program may crash after rebuilding. To f
 
 ## Credits
 
-Drone mathematics based upon example from the [Webots User Guide](https://cyberbotics.com/doc/guide/mavic-2-pro?version=R2022b) used under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+Drone mathematics based upon example from [patrickpbarroso](https://github.com/patrickpbarroso/drone-simulation) used under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
