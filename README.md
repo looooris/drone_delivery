@@ -18,6 +18,8 @@ Colcon
 ```
 sudo apt install colcon
 ```
+There are no python dependencies required for the project except those above. The drone_control_services package provides custom messages and servcies for use within the main drone_delivery package.
+
 ## Run
 
 To run, clone this repository into the src folder within your ROS2 workspace.
