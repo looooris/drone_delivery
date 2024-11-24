@@ -43,7 +43,7 @@ ros2 launch drone_delivery robot_launch.py
 
 The terminal will then ask if you would like to simulate one or two drones. After this, the program will open Webots and the simulation will begin.
 
-Note: Occassionally the program will run into errors on startup if re-launched from the same terminal. To solve this, close your terminal, delete the `build`, `install` & `log` folders from your ROS2 workspace, and follow the instructions above again.
+Note: IF YOU ARE EDITING THE FILES! The program may crash after rebuilding. To fix this, close your terminal, clear out the colcon install waste (the `build`, `install` & `log` folders from your ROS2 workspace), and re-follow the steps above. I'm not sure why this happens, but I think that editing the things that depend on the custom actions can break the program. Sometimes, this causes errors when re-launching the program as well, especially if you are switching between one and two drone operations.
 
 ## Credits
 
