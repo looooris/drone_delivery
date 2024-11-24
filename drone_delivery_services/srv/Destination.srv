@@ -3,4 +3,3 @@ geometry_msgs/Point currentposition
 ---
 geometry_msgs/Point deliverylocation
 bool pharmacy 
-bool finished 

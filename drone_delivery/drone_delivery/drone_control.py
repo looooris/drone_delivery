@@ -40,7 +40,6 @@ class DroneDriver:
         self.is_gripper_open = True 
         self.launchable = False
         self.at_target = False
-        self.finished = False
 
         # Destination metadata
         self.robot_target = Point()
@@ -52,16 +51,16 @@ class DroneDriver:
         self.subscription = rclpy.create_node('driver_'+self.robot.name) 
         self.destination_client = self.subscription.create_client(Destination, 'drone_destination_service')
         self.gripper_client = self.subscription.create_client(Gripper, self.robot.name + '_gripper')
-        self.location_publisher = self.subscription.create_publisher(Droneloc, 'drone_location', 3)
-        self.emergency_stop = self.subscription.create_subscription(Emergency, 'drone_emergency', self.emergency_callback, 10)
+        self.location_publisher = self.subscription.create_publisher(Droneloc, 'drone_location', 1)
+        self.emergency_stop = self.subscription.create_subscription(Emergency, 'drone_emergency', self.emergency_callback, 1)
 
-        self.location_publisher_timer = self.subscription.create_timer(1, self.location_callback)
+        self.location_publisher_timer = self.subscription.create_timer(3, self.location_callback)
         self.destrequest = Destination.Request()
         self.griprequest = Gripper.Request()
         while not self.destination_client.wait_for_service(timeout_sec=1.0) or not self.gripper_client.wait_for_service(timeout_sec=1.0):
             self.subscription.get_logger().info('service(s) not available, waiting again...')
 
-    def location_callback(self):
+    async def location_callback(self):
         gpsValues = self.gps.getValues()
         message = Droneloc()
 
@@ -112,7 +111,6 @@ class DroneDriver:
 
     # Configures destination values
     def updateTarget(self, data):
-        self.finished = data.finished
         self.robot_target.x = data.deliverylocation.x
         self.robot_target.y =  data.deliverylocation.y
         if data.deliverylocation.z < 0:
@@ -176,7 +174,7 @@ class DroneDriver:
     def step(self): 
         rclpy.spin_once(self.subscription, timeout_sec=0)
         intComVal, gpsVal, gyroVal, droneVelocity, distSense = self.locateDrone()
-        if self.launchable and not self.finished: # Robot is in a launchable state
+        if self.launchable: # Robot is in a launchable state
             roll_move = 0
             pitch_move = 0
             vertical_input = 0
@@ -191,6 +189,7 @@ class DroneDriver:
                     if abs(gpsVal[2] - self.robot_target.z) < 0.1:  # turn off propellers
                         self.at_target = True
                         self.launchable = False
+                        
                         for propeller in self.propList:
                             propeller.setVelocity(0)    # stops propellers
                         fineControl = True  # disables movement
@@ -214,7 +213,6 @@ class DroneDriver:
                       
             else:
                 #self.subscription.get_logger().info('Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
-
                 if distSense > 30: 
                     if distSense > 100:
                         self.target_altitude += 1
@@ -250,17 +248,15 @@ class DroneDriver:
                 self.rlp.setVelocity(-(70 + vertical_input + yaw_input - pitch_input - roll_input)) # Rear Left
 
         else:
-            if gpsVal[2] < 0.25 and not self.finished: # drone on the ground
+            if gpsVal[2] < 0.25: # drone on the ground
                 response = None
                 while response is None:
                     response = self.sendRequest()
                     if response is not None:
-                        self.updateTarget(response)              
-                        self.launchable = True 
                         break
+                self.updateTarget(response)              
+                self.launchable = True 
                  # update target and relaunch robot
-            elif self.finished:
-                pass
             else:
                 self.subscription.get_logger().info(self.robot.name + " is not launchable but not on the ground!")
 def main():

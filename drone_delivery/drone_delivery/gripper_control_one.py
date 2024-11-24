@@ -7,7 +7,7 @@ from drone_delivery_services.srv import Gripper
 
 class GripperControl(Node):
     def __init__(self):
-        super().__init__('minimal_service')
+        super().__init__('gripper_one_service')
         self.gripperOpen = True # used to measure if gripper is open
         self.service = self.create_service(Gripper, 'drone_one_gripper', self.gripper_callback)
 

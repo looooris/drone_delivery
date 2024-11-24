@@ -72,28 +72,26 @@ class DirectionPublisher(Node):
                 if len(self.data[0]) > 1:
                     self.data[0].pop(0)
                 else:
-                    self.get_logger().info('Robot one finished')
                     response.deliverylocation.x = float(0)
                     response.deliverylocation.y = float(0)
                     response.deliverylocation.z = float(0)
                     response.pharmacy = False
-                    response.finished = True
+                    #response.finished = True
                     return response
             else:
                 if len(self.data[1]) > 1:
                     self.data[1].pop(0)
                 else:
-                    self.get_logger().info('Robot two finished')
                     response.deliverylocation.x = float(1)
                     response.deliverylocation.y = float(1)
                     response.deliverylocation.z = float(0)
                     response.pharmacy = False
-                    response.finished = True
+                    #response.finished = True
                     return response
                
         # else:
         #     self.get_logger().info('Requested when not at target')
-        self.get_logger().info('Goal requested by ' + str(request.droneid))
+        #self.get_logger().info('Goal requested by ' + str(request.droneid))
         response.deliverylocation.x = float(self.data[dataToPeek][0][0])
         response.deliverylocation.y = float(self.data[dataToPeek][0][1])
         response.deliverylocation.z = float(self.data[dataToPeek][0][2])
