@@ -5,7 +5,6 @@ from controller import Robot
 import math
 
 from drone_delivery_services.srv import Destination, Gripper
-from drone_delivery_services.msg import Droneloc, Emergency
     
 class DroneDriver:
     def init(self, webots_node, properties):
@@ -51,44 +50,10 @@ class DroneDriver:
         self.subscription = rclpy.create_node('driver_'+self.robot.name) 
         self.destination_client = self.subscription.create_client(Destination, 'drone_destination_service')
         self.gripper_client = self.subscription.create_client(Gripper, self.robot.name + '_gripper')
-        self.location_publisher = self.subscription.create_publisher(Droneloc, 'drone_location', 3)
-        self.emergency_stop = self.subscription.create_subscription(Emergency, 'drone_emergency', self.emergency_callback, 10)
-
-        self.location_publisher_timer = self.subscription.create_timer(1, self.location_callback)
         self.destrequest = Destination.Request()
         self.griprequest = Gripper.Request()
         while not self.destination_client.wait_for_service(timeout_sec=1.0) or not self.gripper_client.wait_for_service(timeout_sec=1.0):
             self.subscription.get_logger().info('service(s) not available, waiting again...')
-
-    def location_callback(self):
-        gpsValues = self.gps.getValues()
-        message = Droneloc()
-
-        message.currentposition = Point()
-        message.currentposition.x = gpsValues[0]
-        message.currentposition.y = gpsValues[1]
-        message.currentposition.z = gpsValues[2]
-
-        if self.robot.name == "drone_one":
-            message.id = 1
-        else:
-            message.id = 2
-
-        self.location_publisher.publish(message)
-
-    def emergency_callback(self, msg):
-        if self.robot.name == "drone_one" and msg.id == 1:
-            if msg.safe:
-                self.subscription.get_logger().info("safe from collission")
-            else:
-                self.subscription.get_logger().info("collission imminent. taking evasive action.")
-        elif self.robot.name == "drone_two" and msg.id == 2:
-            if msg.safe:
-                self.subscription.get_logger().info("safe from collission")
-            else:
-                self.subscription.get_logger().info("collission imminent. taking evasive action.")
-
-        
 
     # For sending a request to the location publisher. Sends current position and receives goal
     def sendRequest(self):
@@ -212,10 +177,7 @@ class DroneDriver:
                       
             else:
                 #self.subscription.get_logger().info('Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
-
-                if distSense > 30: 
-                    if distSense > 100:
-                        self.target_altitude += 1
+                if distSense > 50: 
                     # ascends if foreign object detected within 30 units (2m)
                     self.target_altitude += 0.5
                     roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
@@ -252,8 +214,6 @@ class DroneDriver:
                 response = None
                 while response is None:
                     response = self.sendRequest()
-                    if response is None:
-                        time.wait(0.25)
 
                 # update target and relaunch robot
                 self.updateTarget(response)              

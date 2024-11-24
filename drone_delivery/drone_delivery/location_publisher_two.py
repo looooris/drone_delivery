@@ -3,51 +3,16 @@ from rclpy.action import ActionClient
 from geometry_msgs.msg import Point, Twist
 from rclpy.node import Node
 import time
-import math
 
 from drone_delivery_services.srv import Destination
-from drone_delivery_services.msg import Droneloc, Emergency
-
 
 class DirectionPublisher(Node):
     def __init__(self, data):
         super().__init__('direction_publisher')
 
         self.service = self.create_service(Destination, 'drone_destination_service', self.destination_callback)
-        self.location_sub = self.create_subscription(Droneloc, 'drone_location', self.drone_location_callback, 10)
-        self.emergency_stop = self.create_publisher(Emergency, 'drone_emergency', 3)
-        
         self.data = data
-        self.robot_one_pos = None
-        self.robot_two_pos = None
 
-    def drone_location_callback(self, msg):
-        if msg.id == 1:
-            self.robot_one_pos = msg.currentposition
-        else:
-            self.robot_two_pos = msg.currentposition
-
-        if self.robot_one_pos is not None and self.robot_two_pos is not None:
-            distanceBetween = math.sqrt((self.robot_one_pos.x - self.robot_two_pos.x)**2 + (self.robot_one_pos.y - self.robot_two_pos.y) ** 2 + (self.robot_one_pos.z - self.robot_two_pos.z)**2)
-            self.get_logger().info(str(distanceBetween))
-
-            if distanceBetween < 1:
-                while distanceBetween < 1:
-                    # check if a delivery is more urgent than another
-                    emergency_message = Emergency()
-                    emergency_message.id = 1
-                    emergency_message.safe = False
-                    self.emergency_stop.publish(emergency_message)
-                    distanceBetween = math.sqrt((self.robot_one_pos.x - self.robot_two_pos.x)**2 + (self.robot_one_pos.y - self.robot_two_pos.y) ** 2 + (self.robot_one_pos.z - self.robot_two_pos.z)**2)
-
-                emergency_message = Emergency()
-                #same as above
-                emergency_message.id = 1
-                emergency_message.safe = True
-                self.emergency_stop.publish(emergency_message)
-
-            
-    
     async def destination_callback(self, request, response):
         # index the unique part of the drone id eg. 'drone_one'. 'one' is at index 'drone_one'[6:9]
         drone_idy = request.droneid[6:len(request.droneid)]
@@ -101,7 +66,7 @@ def main(args=None):
 
     # do path calculations
     
-    data = [[[5, 5, 0, 1], [0, 0, 0, 0]], [[-5, -5, 0, 1], [1, 1, 0, 0]]]
+    data = [[[-5, -5, 0, 1], [0, 0, 0, 0]], [[5, 5, 0, 1], [1, 1, 0, 0]]]
     dir_pub = DirectionPublisher(data)
     
     rclpy.spin(dir_pub)

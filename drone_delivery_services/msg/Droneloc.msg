@@ -1,2 +1,0 @@
-geometry_msgs/Point currentposition
-int32 id
