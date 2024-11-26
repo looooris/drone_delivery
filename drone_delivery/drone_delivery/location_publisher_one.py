@@ -5,6 +5,8 @@ from rclpy.node import Node
 import time
 
 from drone_delivery_services.srv import Destination
+from drone_delivery import job_scheduling
+
 
 class DirectionPublisher(Node):
     def __init__(self, data):
@@ -12,6 +14,7 @@ class DirectionPublisher(Node):
 
         self.service = self.create_service(Destination, 'drone_destination_service', self.destination_callback)
         self.data = data
+        self.get_logger().info("Drone one goals: " + str(data))
 
     async def destination_callback(self, request, response):
         self.get_logger().info('Goal requested')
@@ -28,9 +31,9 @@ class DirectionPublisher(Node):
 
             else:
                 #self.get_logger().info('Robot finished')
-                response.deliverylocation.x = float(0)
-                response.deliverylocation.y = float(0)
-                response.deliverylocation.z = float(0)
+                response.deliverylocation.x = float(-1)
+                response.deliverylocation.y = float(-1)
+                response.deliverylocation.z = float(-1)
                 response.pharmacy = False
                 return response
         
@@ -51,8 +54,8 @@ def main(args=None):
 
     # do path calculations
     
-    data = [[5, 5, 0, 1], [0, 0, 0, 0]]
-    dir_pub = DirectionPublisher(data)
+    data = job_scheduling.randomise_world(1)
+    dir_pub = DirectionPublisher(data[0])
     
     rclpy.spin(dir_pub)
 

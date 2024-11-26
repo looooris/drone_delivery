@@ -18,6 +18,8 @@ Colcon
 ```
 sudo apt install colcon
 ```
+There are no python dependencies required for the project except those above. The drone_control_services package provides custom messages and servcies for use within the main drone_delivery package.
+
 ## Run
 
 To run, clone this repository into the src folder within your ROS2 workspace.
@@ -43,6 +45,10 @@ ros2 launch drone_delivery robot_launch.py
 
 The terminal will then ask if you would like to simulate one or two drones. After this, the program will open Webots and the simulation will begin.
 
+Note: IF YOU ARE EDITING THE FILES! The program may crash after rebuilding. To fix this, close your terminal, clear out the colcon install waste (the `build`, `install` & `log` folders from your ROS2 workspace), and re-follow the steps above. I'm not sure why this happens, but I think that editing the things that depend on the custom actions can break the program. Sometimes, this causes errors when re-launching the program as well, especially if you are switching between one and two drone operations.
+
+Update: 26/11 - this seems to have fixed itself. I'm not sure why but I'm keeping this here incase it breaks itself again.
+
 ## Credits
 
-Drone mathematics based upon example from the [Webots User Guide](https://cyberbotics.com/doc/guide/mavic-2-pro?version=R2022b) used under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+Drone mathematics based upon example from [patrickpbarroso](https://github.com/patrickpbarroso/drone-simulation) used under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).

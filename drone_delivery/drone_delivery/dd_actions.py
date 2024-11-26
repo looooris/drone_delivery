@@ -1,4 +1,4 @@
-from objects import Drone, House, Pharmacy, Box
+from drone_delivery.objects import Drone, House, Pharmacy, Box
 
 
 def clone_inventory(inventory):

@@ -3,8 +3,11 @@ from rclpy.action import ActionClient
 from geometry_msgs.msg import Point, Twist
 from rclpy.node import Node
 import time
+import math
 
 from drone_delivery_services.srv import Destination
+from drone_delivery_services.msg import Droneloc, Emergency
+from drone_delivery import job_scheduling
 
 class DirectionPublisher(Node):
     def __init__(self, data):
@@ -12,6 +15,34 @@ class DirectionPublisher(Node):
 
         self.service = self.create_service(Destination, 'drone_destination_service', self.destination_callback)
         self.data = data
+        self.robot_one_pos = None
+        self.robot_two_pos = None
+
+        self.get_logger().info("Drone one goals: " + str(data[0]))
+        self.get_logger().info("Drone two goals: " + str(data[1]))
+
+        self.location_sub = self.create_subscription(Droneloc, 'drone_location', self.drone_location_callback, 10)
+        self.emergency_stop = self.create_publisher(Emergency, 'drone_emergency', 3)
+    
+    def drone_location_callback(self, msg):
+        if msg.id == 1:
+            self.robot_one_pos = msg.currentposition
+        else:
+            self.robot_two_pos = msg.currentposition
+
+        if self.robot_one_pos is not None and self.robot_two_pos is not None:
+            distanceBetween = math.sqrt((self.robot_one_pos.x - self.robot_two_pos.x)**2 + (self.robot_one_pos.y - self.robot_two_pos.y) ** 2 + (self.robot_one_pos.z - self.robot_two_pos.z)**2)
+            #self.get_logger().info("Distance between robots: " + str(distanceBetween))
+            emergency_message = Emergency()
+
+            if distanceBetween < 1:
+                self.get_logger().info("Distance between drones is " + str(distanceBetween))
+
+                # check if a delivery is more urgent than another
+                
+                emergency_message.id = 1
+                emergency_message.safe = False
+                self.emergency_stop.publish(emergency_message)
 
     async def destination_callback(self, request, response):
         # index the unique part of the drone id eg. 'drone_one'. 'one' is at index 'drone_one'[6:9]
@@ -30,27 +61,21 @@ class DirectionPublisher(Node):
                 if len(self.data[0]) > 1:
                     self.data[0].pop(0)
                 else:
-                    #self.get_logger().info('Robot finished')
-                    response.deliverylocation.x = float(0)
-                    response.deliverylocation.y = float(0)
-                    response.deliverylocation.z = float(0)
+                    response.deliverylocation.x = float(-1)
+                    response.deliverylocation.y = float(-1)
+                    response.deliverylocation.z = float(-1)
                     response.pharmacy = False
                     return response
             else:
                 if len(self.data[1]) > 1:
                     self.data[1].pop(0)
                 else:
-                    #self.get_logger().info('Robot finished')
-                    response.deliverylocation.x = float(1)
-                    response.deliverylocation.y = float(1)
-                    response.deliverylocation.z = float(0)
+                    response.deliverylocation.x = float(-1)
+                    response.deliverylocation.y = float(-1)
+                    response.deliverylocation.z = float(-1)
                     response.pharmacy = False
                     return response
-               
-            
         
-        # else:
-        #     self.get_logger().info('Requested when not at target')
         self.get_logger().info('Goal requested by ' + str(request.droneid))
         response.deliverylocation.x = float(self.data[dataToPeek][0][0])
         response.deliverylocation.y = float(self.data[dataToPeek][0][1])
@@ -65,8 +90,8 @@ def main(args=None):
     rclpy.init(args=args)
 
     # do path calculations
-    
-    data = [[[-5, -5, 0, 1], [0, 0, 0, 0]], [[5, 5, 0, 1], [1, 1, 0, 0]]]
+    data = job_scheduling.randomise_world(2)
+    #data = [[[5, 5, 0, 1], [0, 0, 0, 0]], [[-5, -5, 0, 1], [1, 1, 0, 0]]]
     dir_pub = DirectionPublisher(data)
     
     rclpy.spin(dir_pub)
