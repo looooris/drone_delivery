@@ -40,6 +40,7 @@ class DroneDriver:
         self.is_gripper_open = True 
         self.launchable = False
         self.at_target = False
+        self.killRobot = False
 
         # Destination metadata
         self.robot_target = Point()
@@ -106,14 +107,18 @@ class DroneDriver:
 
     # Configures destination values
     def updateTarget(self, data):
-        self.robot_target.x = data.deliverylocation.x
-        self.robot_target.y =  data.deliverylocation.y
-        if data.deliverylocation.z < 0:
-            raise Exception("Z cannot be less than 0")
-        self.robot_target.z = data.deliverylocation.z
-        self.target_altitude = max(3, data.deliverylocation.z + 3)
-        self.to_pharmacy = data.pharmacy
-        #self.subscription.get_logger().info('New Robot Target: '+ str(self.robot_target.x) + ' ' + ' ' + str(self.robot_target.y) + ' ' + ' ' + str(self.robot_target.z) + ' ' + ' ' + str(self.to_pharmacy))
+        if [data.deliverylocation.x, data.deliverylocation.y, data.deliverylocation.z] == [-1, -1, -1]:
+            self.killRobot = True
+            self.subscription.get_logger().info(self.robot.name + " finished!")
+        else:
+            self.robot_target.x = data.deliverylocation.x
+            self.robot_target.y =  data.deliverylocation.y
+            if data.deliverylocation.z < 0:
+                raise Exception("Z cannot be less than 0")
+            self.robot_target.z = data.deliverylocation.z
+            self.target_altitude = max(3, data.deliverylocation.z + 3)
+            self.to_pharmacy = data.pharmacy
+            self.subscription.get_logger().info('New ' + str(self.robot.name) + ' Target: '+ str(self.robot_target.x) + ' ' + ' ' + str(self.robot_target.y) + ' ' + ' ' + str(self.robot_target.z) + ' ' + ' ' + str(self.to_pharmacy))
         
     # Returns the location, angle, speed and distance sensor detections of the drone
     def locateDrone(self):
@@ -167,90 +172,92 @@ class DroneDriver:
             return value
 
     def step(self): 
-        rclpy.spin_once(self.subscription, timeout_sec=0)
-        intComVal, gpsVal, gyroVal, droneVelocity, distSense = self.locateDrone()
-        if self.launchable: # Robot is in a launchable state
-            roll_move = 0
-            pitch_move = 0
-            vertical_input = 0
-            yaw_input = 0
-            fineControl = False
+        if not self.killRobot:
+            rclpy.spin_once(self.subscription, timeout_sec=0)
+            intComVal, gpsVal, gyroVal, droneVelocity, distSense = self.locateDrone()
+            if self.launchable: # Robot is in a launchable state
+                roll_move = 0
+                pitch_move = 0
+                vertical_input = 0
+                yaw_input = 0
+                fineControl = False
 
-            distance, angle = self.calcAngleDist(gpsVal, intComVal)
-            roll_move, pitch_move = self.calcPitchRoll(gpsVal)
-            if distance < 1:   
-                #landing sequence
-                if abs(gpsVal[1] - self.robot_target.y) < 0.5 and abs(gpsVal[0] - self.robot_target.x) < 0.5: 
-                    if abs(gpsVal[2] - self.robot_target.z) < 0.1:  # turn off propellers
-                        self.at_target = True
-                        self.launchable = False
-                        for propeller in self.propList:
-                            propeller.setVelocity(0)    # stops propellers
-                        fineControl = True  # disables movement
-                        if self.to_pharmacy:
-                            if self.is_gripper_open:
-                                self.sendGripRequest(False) # closes gripper if destination is pharmacy (pick up)
-                        else:
-                            if not self.is_gripper_open:
-                                self.sendGripRequest(True)  # opens gripper if destination is not pharmacy (drop off)
-                    else:   
-                        if gpsVal[2] > self.robot_target.z:
-                            self.target_altitude = min(self.robot_target.z, 0)  # begins descent
-                            vertical_input = self.bind(self.target_altitude-gpsVal[2], -4, -1)
-                        else:
-                            vertical_input = 3.0 * self.bind(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0    # begins ascent    
-                if not fineControl:
-                    yaw_input = 0.8 * angle / (2 * math.pi)     
-                    roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
-                    pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1] + self.bind(math.log10(abs(angle)), -0.2, 0.1)
-                                                 
-                      
-            else:
-                #self.subscription.get_logger().info('Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
-                if distSense > 30: 
-                    # ascends if foreign object detected within 30 units (2m)
-                    self.target_altitude += 0.5
-                    roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
-                    pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1]
+                distance, angle = self.calcAngleDist(gpsVal, intComVal)
+                roll_move, pitch_move = self.calcPitchRoll(gpsVal)
+                if distance < 1:   
+                    #landing sequence
+                    if abs(gpsVal[1] - self.robot_target.y) < 0.5 and abs(gpsVal[0] - self.robot_target.x) < 0.5: 
+                        if abs(gpsVal[2] - self.robot_target.z) < 0.1:  # turn off propellers
+                            self.at_target = True
+                            self.launchable = False
+                            for propeller in self.propList:
+                                propeller.setVelocity(0)    # stops propellers
+                            fineControl = True  # disables movement
+                            if self.to_pharmacy:
+                                if self.is_gripper_open:
+                                    self.sendGripRequest(False) # closes gripper if destination is pharmacy (pick up)
+                            else:
+                                if not self.is_gripper_open:
+                                    self.sendGripRequest(True)  # opens gripper if destination is not pharmacy (drop off)
+                        else:   
+                            if gpsVal[2] > self.robot_target.z:
+                                self.target_altitude = min(self.robot_target.z, 0)  # begins descent
+                                vertical_input = self.bind(self.target_altitude-gpsVal[2], -4, -1)
+                            else:
+                                vertical_input = 3.0 * self.bind(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0    # begins ascent    
+                    if not fineControl:
+                        yaw_input = 0.8 * angle / (2 * math.pi)     
+                        roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
+                        pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1] + self.bind(math.log10(abs(angle)), -0.2, 0.1)
+                                                    
+                        
                 else:
-                    # if robot is clear but still has a lot to travel upwards, cancel the upwards movement
-                    if distSense == 0 and abs(self.target_altitude - gpsVal[2]) > 2 and self.target_altitude != 3:
-                        if self.target_altitude != self.robot_target.z + 3:
-                            self.subscription.get_logger().info('New target altitude at ' + str(gpsVal[2]) + ' Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
-                            self.target_altitude = gpsVal[2]
-
-                    # Mathematical calculations - based upon https://github.com/patrickpbarroso/drone-simulation
-                    if abs(angle) > 0.1:
-                        yaw_input = 2 * angle / (2 * math.pi)
+                    #self.subscription.get_logger().info('Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
+                    if distSense > 30: 
+                        # ascends if foreign object detected within 30 units (2m)
+                        self.target_altitude += 0.5
                         pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1]
                     else:
-                        #slows rotation
-                        yaw_input = angle / (2 * math.pi)
-                        pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1] + self.bind(math.log10(abs(angle)), -1, 0.1)      
+                        # if robot is clear but still has a lot to travel upwards, cancel the upwards movement
+                        if distSense == 0 and abs(self.target_altitude - gpsVal[2]) > 2 and self.target_altitude != 3:
+                            if self.target_altitude != self.robot_target.z + 3:
+                                self.subscription.get_logger().info('New target altitude at ' + str(gpsVal[2]) + ' Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
+                                self.target_altitude = gpsVal[2]
 
-                vertical_input = 3.0 * self.bind(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
-                roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
-  
+                        # Mathematical calculations - based upon https://github.com/patrickpbarroso/drone-simulation
+                        if abs(angle) > 0.1:
+                            yaw_input = 2 * angle / (2 * math.pi)
+                            pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1]
+                        else:
+                            #slows rotation
+                            yaw_input = angle / (2 * math.pi)
+                            pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1] + self.bind(math.log10(abs(angle)), -1, 0.1)      
 
-            if not fineControl:
-                # Robot propeller settings
-                self.frp.setVelocity(-(70 + vertical_input + yaw_input + pitch_input + roll_input)) # Front Right
-                self.flp.setVelocity(70 + vertical_input - yaw_input + pitch_input - roll_input) # Front Left
-                self.rrp.setVelocity(70 + vertical_input - yaw_input - pitch_input + roll_input) # Rear Right
-                self.rlp.setVelocity(-(70 + vertical_input + yaw_input - pitch_input - roll_input)) # Rear Left
+                    vertical_input = 3.0 * self.bind(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
+                    roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
+    
 
-        else:
-            if gpsVal[2] < 0.25: # drone on the ground
-                response = None
-                while response is None:
-                    response = self.sendRequest()
-
-                # update target and relaunch robot
-                self.updateTarget(response)              
-                self.launchable = True 
+                if not fineControl:
+                    # Robot propeller settings
+                    self.frp.setVelocity(-(70 + vertical_input + yaw_input + pitch_input + roll_input)) # Front Right
+                    self.flp.setVelocity(70 + vertical_input - yaw_input + pitch_input - roll_input) # Front Left
+                    self.rrp.setVelocity(70 + vertical_input - yaw_input - pitch_input + roll_input) # Rear Right
+                    self.rlp.setVelocity(-(70 + vertical_input + yaw_input - pitch_input - roll_input)) # Rear Left
 
             else:
-                raise Exception("The drone isn't launchable, it's not on the ground")
+                if gpsVal[2] < 0.25: # drone on the ground
+                    response = None
+                    while response is None:
+                        response = self.sendRequest()
+
+                    
+
+                    # update target and relaunch robot
+                    self.updateTarget(response)              
+                    self.launchable = True 
+
+                else:
+                    raise Exception("The drone isn't launchable, it's not on the ground")
 
 def main():
     robotControl = DroneDriver()

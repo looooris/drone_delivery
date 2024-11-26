@@ -13,6 +13,7 @@ class DirectionPublisher(Node):
         self.service = self.create_service(Destination, 'drone_destination', self.destination_callback)
         self.data = data
 
+
     async def destination_callback(self, request, response):
         self.get_logger().info('Goal requested')
 

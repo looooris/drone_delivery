@@ -1,8 +1,9 @@
 from queue import PriorityQueue
 import csv
-from actions import Move, Pickup, Dropoff
-from objects import Drone, House, Pharmacy, Box
+from drone_delivery.dd_actions import Move, Pickup, Dropoff
+from drone_delivery.objects import Drone, House, Pharmacy, Box
 from itertools import combinations
+import random 
 
 # runs once at beginning of program
 def generate_actions(state, locations):
@@ -132,7 +133,7 @@ class AStarPlanner():
 
         # execute while there are still nodes in the queue
         while not frontier.empty():
-            print('nodes in frontier:',len(frontier.queue))
+            #print('nodes in frontier:',len(frontier.queue))
             """
             print('Possible moves:')
             for _, n in frontier.queue:
@@ -262,7 +263,7 @@ def generate_plan(drones, inventories, locations):
         # curate list of tasks for each drone
         for action in plan:
             drone_id = action.drone_id
-            print('drone id: '+str(drone_id))
+            #print('drone id: '+str(drone_id))
 
             current_state = resulting_state
             current_box_status = current_state[0][drone_id].status
@@ -352,35 +353,53 @@ def example_hardcoded_params():
     return drones, inventories, locations
 
 
-def loris_example():
+def randomise_world(number_of_drones):
     # example with hardcoded ids and coordinates
    
-    l1 = (0, 0, 0) # Pharmacy
-    l2 = (45.65, 38.58, -0.03) # Pharmacy
-    l3 = (60.65, -27.63, -0.03) # House
-    l4 = (16.78, 20.71, -0.03) # House
-    l5 = (30.55, -26.11, -0.03) # House
-    l6 = (-46, 4.12, -0.03) # House
+    l1 = (2, 2, 0) # Pharmacy
+    l2 = (45.65, 38.58, 0) # Pharmacy
+    l3 = (60.65, -27.63, 0) # House
+    l4 = (16.78, 20.71, 0) # House
+    l5 = (30.55, -26.11, 0) # House
+    l6 = (-46, 4.12, 0) # House
+
+    pharmacyList = [l1, l2]
+    houseList = [l3, l4, l5, l6]
+
 
     # box id, pickup location, dropoff location, priority status (default is none)
-    box1 = Box(0, l1, l3)
-    box2 = Box(1, l1, l4)
-    box3 = Box(2, l1, l4)
-    box4 = Box(3, l2, l5)
-    box5 = Box(4, l2, l6)
+    if number_of_drones == 2:
+        box1 = Box(0, random.choice(pharmacyList), random.choice(houseList))
+        box2 = Box(1, random.choice(pharmacyList), random.choice(houseList))
+        box3 = Box(2, random.choice(pharmacyList), random.choice(houseList), 'urgent')
+        box4 = Box(3, random.choice(pharmacyList), random.choice(houseList))
+        box5 = Box(4, random.choice(pharmacyList), random.choice(houseList))
+        
+        boxes = [box1, box2, box3, box4, box5]
+    
+    else:
+        box1 = Box(0, random.choice(pharmacyList), random.choice(houseList))
+        box2 = Box(1, random.choice(pharmacyList), random.choice(houseList), 'urgent')
+        box3 = Box(2, random.choice(pharmacyList), random.choice(houseList))
 
-    drones = {
-        # done_id, pos (x, y, z), status (box object or none)
-        0: Drone(0, l1),
-        1: Drone(1, l1)
-        }
-                
+        boxes = [box1, box2, box3]
+
+    inventory1 = set()
+    inventory2 = set()
+
+    for box in boxes:
+        if (box.returnPickup() == l1):
+            inventory1.add(box)
+        else:
+            inventory2.add(box)
+
+    drones = {}
+    for z in range(number_of_drones):
+        drones[z] = Drone(z, (z, z, 0))
+        
     # each location (pharmacy or house) will have a unique id
     # box_id or order_id, box object
     #inventory is a set
-    inventory1 = {box1, box2, box3}
-    inventory2 = {box4, box5}
-
 
     inventories = {
         #pharmacy_id, pharmacy.inventory
@@ -395,7 +414,6 @@ def loris_example():
     house3 = House(l5)
     house4 = House(l6)
 
-
     locations = {
         # (x, y, z), location object
         l1: pharmacy1, 
@@ -405,7 +423,25 @@ def loris_example():
         l5: house3,
         l6: house4
                 }
-    return drones, inventories, locations
+
+    plan = generate_plan(drones, inventories, locations)
+    returnPlans = [None] * number_of_drones
+
+    for singleItem in range(len(plan)):
+        #returnPlans[singleItem] = [[singleItem, singleItem, singleItem, 0, 1]]
+        returnPlans[singleItem] = []
+        for singleAction in plan[singleItem]:
+            if(singleAction[0] == "move"):
+                if singleAction[1] == 'H':
+                    goal = 0
+                else:
+                    goal = 1
+
+                returnPlans[singleItem].append([singleAction[2][0], singleAction[2][1], singleAction[2][2], goal])
+        returnPlans[singleItem].append([singleItem, singleItem, 0, 1])
+    
+    #print(returnPlans)            
+    return returnPlans
 
 
 # example reading from csv file. uncomment the line below to get params
@@ -415,11 +451,12 @@ def loris_example():
 #drones, inventories, locations = example_hardcoded_params()
 
 # example with hardcoded values. uncomment the line below to get params
-drones, inventories, locations = loris_example()
+randomise_world(2)
+randomise_world(1)
 
 # get list of tasks for each drone
-drone_action_plans = generate_plan(drones, inventories, locations)
-print_plans(drone_action_plans)
+# drone_action_plans = generate_plan(drones, inventories, locations)
+# print_plans(drone_action_plans)
 
 """
 parses input into drones, inventories, and locations and feeds these into a planner to create an optimal plan for each drone

@@ -19,6 +19,9 @@ class Box():
         self.dropoff_pos = dropoff_pos
         self.priority = priority
 
+    def returnPickup(self):
+        return self.pickup_pos
+
 class Location(object):
     def __init__(self, location_id, pos):
         self.location_id = location_id
