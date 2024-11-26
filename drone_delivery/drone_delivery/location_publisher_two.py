@@ -17,12 +17,13 @@ class DirectionPublisher(Node):
         self.data = data
         self.robot_one_pos = None
         self.robot_two_pos = None
+        self.emergency_history = False
 
         self.get_logger().info("Drone one goals: " + str(data[0]))
         self.get_logger().info("Drone two goals: " + str(data[1]))
 
         self.location_sub = self.create_subscription(Droneloc, 'drone_location', self.drone_location_callback, 10)
-        self.emergency_stop = self.create_publisher(Emergency, 'drone_emergency', 3)
+        self.emergency_stop = self.create_publisher(Emergency, 'drone_emergency', 1)
     
     def drone_location_callback(self, msg):
         if msg.id == 1:
@@ -31,7 +32,7 @@ class DirectionPublisher(Node):
             self.robot_two_pos = msg.currentposition
 
         if self.robot_one_pos is not None and self.robot_two_pos is not None:
-            distanceBetween = math.sqrt((self.robot_one_pos.x - self.robot_two_pos.x)**2 + (self.robot_one_pos.y - self.robot_two_pos.y) ** 2 + (self.robot_one_pos.z - self.robot_two_pos.z)**2)
+            distanceBetween = math.sqrt((self.robot_one_pos.x - self.robot_two_pos.x)**2 + (self.robot_one_pos.y - self.robot_two_pos.y) ** 2) ## only care about 2d to avoid robots landing ontop of each other
             #self.get_logger().info("Distance between robots: " + str(distanceBetween))
             emergency_message = Emergency()
 
@@ -42,6 +43,12 @@ class DirectionPublisher(Node):
                 
                 emergency_message.id = 1
                 emergency_message.safe = False
+                self.emergency_history = True
+                self.emergency_stop.publish(emergency_message)
+            if distanceBetween > 1 and self.emergency_history:
+                emergency_message.id = 1
+                emergency_message.safe = True
+                self.emergency_history = False
                 self.emergency_stop.publish(emergency_message)
 
     async def destination_callback(self, request, response):

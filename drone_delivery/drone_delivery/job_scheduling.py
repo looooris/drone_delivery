@@ -1,7 +1,13 @@
 from queue import PriorityQueue
 import csv
+
+#ROS2 IMPORTS
 from drone_delivery.dd_actions import Move, Pickup, Dropoff
 from drone_delivery.objects import Drone, House, Pharmacy, Box
+
+#LOCAL PYTHON IMPORTS (COMMENT ABOVE AND UNCOMMENT BELOW)
+#from objects import Drone, House, Pharmacy, Box
+#from dd_actions import Move, Pickup, Dropoff
 from itertools import combinations
 import random 
 
@@ -451,8 +457,8 @@ def randomise_world(number_of_drones):
 #drones, inventories, locations = example_hardcoded_params()
 
 # example with hardcoded values. uncomment the line below to get params
-randomise_world(2)
-randomise_world(1)
+#randomise_world(2)
+#randomise_world(1)
 
 # get list of tasks for each drone
 # drone_action_plans = generate_plan(drones, inventories, locations)

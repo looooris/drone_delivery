@@ -41,6 +41,7 @@ class DroneDriver:
         self.launchable = False
         self.at_target = False
         self.killRobot = False
+        self.safe = True
 
         # Destination metadata
         self.robot_target = Point()
@@ -62,13 +63,15 @@ class DroneDriver:
 
         self.location_publisher_timer = self.subscription.create_timer(3, self.location_callback)
 
+    def initiate_emergency(self, msg):
+        if not msg.safe:
+                self.safe = False
+                self.subscription.get_logger().info("collission imminent. taking evasive action.")
+        self.safe = True
+
     def emergency_callback(self, msg):
-        if self.robot.name == "drone_one" and msg.id == 1:
-            if not msg.safe:
-                self.subscription.get_logger().info("collission imminent. taking evasive action.")
-        elif self.robot.name == "drone_two" and msg.id == 2:
-            if not msg.safe:
-                self.subscription.get_logger().info("collission imminent. taking evasive action.")
+        if self.robot.name == "drone_one" and msg.id == 1: self.initiate_emergency(msg)
+        elif self.robot.name == "drone_two" and msg.id == 2: self.initiate_emergency(msg)
     
     async def location_callback(self):
         gpsValues = self.gps.getValues()
@@ -184,7 +187,11 @@ class DroneDriver:
 
                 distance, angle = self.calcAngleDist(gpsVal, intComVal)
                 roll_move, pitch_move = self.calcPitchRoll(gpsVal)
-                if distance < 1:   
+                if not self.safe: #if near collision, stop robot
+                    yaw_input = 0     
+                    roll_input = 50 * self.bind(intComVal[0], -1, 1) 
+                    pitch_input = 30 * self.bind(intComVal[1], -1, 1) 
+                elif distance < 1:   
                     #landing sequence
                     if abs(gpsVal[1] - self.robot_target.y) < 0.5 and abs(gpsVal[0] - self.robot_target.x) < 0.5: 
                         if abs(gpsVal[2] - self.robot_target.z) < 0.1:  # turn off propellers
