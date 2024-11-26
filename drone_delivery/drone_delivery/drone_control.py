@@ -65,9 +65,10 @@ class DroneDriver:
 
     def initiate_emergency(self, msg):
         if not msg.safe:
-                self.safe = False
-                self.subscription.get_logger().info("collission imminent. taking evasive action.")
-        self.safe = True
+            self.safe = False
+            self.subscription.get_logger().info("collission imminent. taking evasive action.")
+        else:   
+            self.safe = True
 
     def emergency_callback(self, msg):
         if self.robot.name == "drone_one" and msg.id == 1: self.initiate_emergency(msg)

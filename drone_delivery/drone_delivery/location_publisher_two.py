@@ -23,7 +23,7 @@ class DirectionPublisher(Node):
         self.get_logger().info("Drone two goals: " + str(data[1]))
 
         self.location_sub = self.create_subscription(Droneloc, 'drone_location', self.drone_location_callback, 10)
-        self.emergency_stop = self.create_publisher(Emergency, 'drone_emergency', 1)
+        self.emergency_stop = self.create_publisher(Emergency, 'drone_emergency', 3)
     
     def drone_location_callback(self, msg):
         if msg.id == 1:
@@ -97,7 +97,7 @@ def main(args=None):
     rclpy.init(args=args)
 
     # do path calculations
-    data = job_scheduling.randomise_world(2)
+    #data = job_scheduling.randomise_world(2)
     #data = [[[5, 5, 0, 1], [0, 0, 0, 0]], [[-5, -5, 0, 1], [1, 1, 0, 0]]]
     dir_pub = DirectionPublisher(data)
     
