@@ -1,4 +1,8 @@
+#ROS2 IMPORTS
 from drone_delivery.objects import Drone, House, Pharmacy, Box
+
+#LOCAL PYTHON IMPORTS (COMMENT ABOVE AND UNCOMMENT BELOW)
+#from objects import Drone, House, Pharmacy, Box
 
 
 def clone_inventory(inventory):
