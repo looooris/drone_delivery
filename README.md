@@ -51,4 +51,4 @@ Update: 26/11 - this seems to have fixed itself. I'm not sure why but I'm keepin
 
 ## Credits
 
-Drone mathematics based upon example from The [Webots Guide]([https://github.com/patrickpbarroso/drone-simulation](https://github.com/cyberbotics/webots/blob/master/projects/robots/dji/mavic/controllers/mavic2pro_patrol/mavic2pro_patrol.py)) used under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+Drone mathematics based upon example from The [Webots Guide]([https://github.com/patrickpbarroso/drone-simulation](https://github.com/cyberbotics/webots/blob/master/projects/robots/dji/mavic/controllers/mavic2pro_patrol/mavic2pro_patrol.py) used under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
