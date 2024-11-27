@@ -28,6 +28,7 @@ setup(
             'schedule_two = drone_delivery.location_publisher_two:main',
             'grip_one = drone_delivery.gripper_control_one:main',
             'grip_two = drone_delivery.gripper_control_two:main',
+            'goal = drone_delivery.goal_handler:main',
         ],
     },
 )

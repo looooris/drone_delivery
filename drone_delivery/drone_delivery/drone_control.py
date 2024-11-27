@@ -3,6 +3,7 @@ from rclpy.action import ActionServer
 from geometry_msgs.msg import Point
 from controller import Robot
 import math
+import time
 
 from drone_delivery_services.srv import Destination, Gripper
 from drone_delivery_services.msg import Droneloc, Emergency
@@ -11,6 +12,7 @@ class DroneDriver:
     def init(self, webots_node, properties):
         self.robot = webots_node.robot
         self.time_step = 1
+        self.start_time = time.time() # initalize a timer
 
         # Initalise sensors
         self.distanceSensor = self.robot.getDevice('distance sensor')
@@ -97,7 +99,9 @@ class DroneDriver:
         self.destrequest.currentposition.x = gpsValues[0]
         self.destrequest.currentposition.y = gpsValues[1]
         self.destrequest.currentposition.z = gpsValues[2]
+        self.destrequest.starttime = self.start_time # time at beginning of trip
         self.destfuture = self.destination_client.call_async(self.destrequest)
+        self.reset_time()
         rclpy.spin_until_future_complete(self.subscription, self.destfuture)
         return self.destfuture.result()
 
@@ -174,6 +178,9 @@ class DroneDriver:
             return value_max
         else:
             return value
+        
+    def reset_time(self):
+        self.start_time = time.time()
 
     def step(self): 
         if not self.killRobot:
