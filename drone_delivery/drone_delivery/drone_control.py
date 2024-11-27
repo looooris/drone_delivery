@@ -44,6 +44,7 @@ class DroneDriver:
         self.at_target = False
         self.killRobot = False
         self.safe = True
+        
 
         # Destination metadata
         self.robot_target = Point()
