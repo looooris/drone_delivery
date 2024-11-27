@@ -191,7 +191,8 @@ class DroneDriver:
                 if not self.safe: #if near collision, stop robot
                     yaw_input = 0     
                     roll_input = 50 * self.bind(intComVal[0], -1, 1) 
-                    pitch_input = 30 * self.bind(intComVal[1], -1, 1) 
+                    pitch_input = 30 * self.bind(intComVal[1], -1, 1)
+                    vertical_input = 3 * self.bind(self.target_altitude, -0.1, 0)**3.0
                 elif distance < 1:   
                     #landing sequence
                     if abs(gpsVal[1] - self.robot_target.y) < 0.5 and abs(gpsVal[0] - self.robot_target.x) < 0.5: 

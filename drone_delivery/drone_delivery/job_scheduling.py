@@ -445,7 +445,24 @@ def randomise_world(number_of_drones):
 
                 returnPlans[singleItem].append([singleAction[2][0], singleAction[2][1], singleAction[2][2], goal])
         returnPlans[singleItem].append([singleItem, singleItem, 0, 1])
-    
+
+    # avoid sending robots to the same place initially
+    if len(plan) > 1:
+        if returnPlans[0][0] == returnPlans[1][0]:
+            if returnPlans[0][2] == returnPlans[1][0]:
+                temp = returnPlans[1][0]
+                temptwo = returnPlans[1][1]
+                returnPlans[1][0] = returnPlans[1][2]
+                returnPlans[1][1] = returnPlans[1][3]
+                returnPlans[1][2] = temp
+                returnPlans[1][3] = temptwo
+            else:
+                temp = returnPlans[0][0]
+                temptwo = returnPlans[0][1]
+                returnPlans[0][0] = returnPlans[0][2]
+                returnPlans[0][1] = returnPlans[0][3]
+                returnPlans[0][2] = temp
+                returnPlans[0][3] = temptwo    
     #print(returnPlans)            
     return returnPlans
 

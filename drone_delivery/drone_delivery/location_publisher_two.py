@@ -36,11 +36,9 @@ class DirectionPublisher(Node):
             #self.get_logger().info("Distance between robots: " + str(distanceBetween))
             emergency_message = Emergency()
 
-            if distanceBetween < 1:
+            if distanceBetween < 1 and abs(self.robot_one_pos.z - self.robot_two_pos.z) < 4:
                 self.get_logger().info("Distance between drones is " + str(distanceBetween))
 
-                # check if a delivery is more urgent than another
-                
                 emergency_message.id = 1
                 emergency_message.safe = False
                 self.emergency_history = True
@@ -71,6 +69,7 @@ class DirectionPublisher(Node):
                     response.deliverylocation.x = float(-1)
                     response.deliverylocation.y = float(-1)
                     response.deliverylocation.z = float(-1)
+                    robot_one_pos = None
                     response.pharmacy = False
                     return response
             else:
@@ -80,6 +79,7 @@ class DirectionPublisher(Node):
                     response.deliverylocation.x = float(-1)
                     response.deliverylocation.y = float(-1)
                     response.deliverylocation.z = float(-1)
+                    robot_two_pos = None
                     response.pharmacy = False
                     return response
         
@@ -97,8 +97,8 @@ def main(args=None):
     rclpy.init(args=args)
 
     # do path calculations
-    #data = job_scheduling.randomise_world(2)
-    #data = [[[5, 5, 0, 1], [0, 0, 0, 0]], [[-5, -5, 0, 1], [1, 1, 0, 0]]]
+    data = job_scheduling.randomise_world(2)
+    #data = [[[5, 5, 0, 1], [0, 0, 0, 0]], [[5, 5, 0, 1], [1, 1, 0, 0]]]
     dir_pub = DirectionPublisher(data)
     
     rclpy.spin(dir_pub)
