@@ -1,4 +1,4 @@
-int32 id
+string id
 geometry_msgs/Point resultingposition
-int goaltype
-float deliverytime
+int32 goaltype
+float32 deliverytime

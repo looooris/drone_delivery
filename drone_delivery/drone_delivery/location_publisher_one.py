@@ -5,6 +5,7 @@ from rclpy.node import Node
 import time
 
 from drone_delivery_services.srv import Destination
+from drone_delivery_services.msg import Goal
 from drone_delivery import job_scheduling
 
 
@@ -16,10 +17,14 @@ class DirectionPublisher(Node):
         self.data = data
         self.get_logger().info("Drone one goals: " + str(data))
 
+        self.goal_publisher = self.create_publisher(Goal, 'drone_goal', 3)
+
     async def destination_callback(self, request, response):
         self.get_logger().info('Goal requested')
 
         if abs(request.currentposition.x - float(self.data[0][0])) < 0.5 and abs(request.currentposition.y - float(self.data[0][1])) < 0.5:
+            trip_duration = time.time() - request.starttime
+            self.publish_goal("drone_one", self.data[0], trip_duration)
             # if self.data[0][3] == 1: # goal was pharmacy, send request
             #     self.movementbot_target = request.currentposition
             #    # while not self.wheelbotDest:
@@ -48,6 +53,19 @@ class DirectionPublisher(Node):
         else: 
             response.pharmacy = False
         return response
+
+    def publish_goal(self, droneid, goal_data, trip_duration):
+        goal_message = Goal()
+        # [x, y, z, landing location type (0 or 1)]
+        x, y, z, goaltype = goal_data
+        goal_message.id = droneid
+        goal_message.resultingposition.x = float(x)
+        goal_message.resultingposition.y = float(y)
+        goal_message.resultingposition.z = float(z)
+        goal_message.goaltype = int(goaltype)
+        goal_message.deliverytime = float(trip_duration)
+
+        self.goal_publisher.publish(goal_message)
     
 def main(args=None):
     rclpy.init(args=args)
