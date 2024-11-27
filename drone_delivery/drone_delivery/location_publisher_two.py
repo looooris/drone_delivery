@@ -6,8 +6,8 @@ import time
 import math
 
 from drone_delivery_services.srv import Destination
-from drone_delivery_services.msg import Droneloc, Emergency
-from drone_delivery import job_scheduling
+from drone_delivery_services.msg import Droneloc, Emergency, Goal
+from drone_delivery.drone_delivery import job_scheduling
 
 class DirectionPublisher(Node):
     def __init__(self, data):
@@ -24,6 +24,7 @@ class DirectionPublisher(Node):
 
         self.location_sub = self.create_subscription(Droneloc, 'drone_location', self.drone_location_callback, 10)
         self.emergency_stop = self.create_publisher(Emergency, 'drone_emergency', 3)
+        self.goal_publisher = self.create_publisher(Goal, 'drone_goal', 3)
     
     def drone_location_callback(self, msg):
         if msg.id == 1:
@@ -62,27 +63,34 @@ class DirectionPublisher(Node):
         else:
             dataToPeek = 1
             
-        # if the drone is at or close enough to the ground, it has reached the delivery location
+        # if the drone is close enough to the destination, it has reached the destination
         if abs(request.currentposition.x - float(self.data[dataToPeek][0][0])) < 0.5 and abs(request.currentposition.y - float(self.data[dataToPeek][0][1])) < 0.5:
+            trip_duration = time.time() - request.starttime
+            # drone has arrived at goal
+            self.publish_goal("drone_"+drone_idy, self.data[dataToPeek][0], trip_duration)
+            
             if drone_idy == "one":
-                if len(self.data[0]) > 1:
+                if len(self.data[0]) > 1: # if drone 1 has tasks left
+                    # drone 1 completed task, so remove from task list
                     self.data[0].pop(0)
-                else:
+                else: # otherwise drone 1 is already home
                     response.deliverylocation.x = float(-1)
                     response.deliverylocation.y = float(-1)
                     response.deliverylocation.z = float(-1)
                     response.pharmacy = False
                     return response
             else:
-                if len(self.data[1]) > 1:
+                if len(self.data[1]) > 1: # if drone 2 has tasks left
+                    # drone 2 completed task, so remove from task list
                     self.data[1].pop(0)
-                else:
+                else: # otherwise drone 2 is already home
                     response.deliverylocation.x = float(-1)
                     response.deliverylocation.y = float(-1)
                     response.deliverylocation.z = float(-1)
                     response.pharmacy = False
                     return response
-        
+                
+        # drone is provided with new location to go to
         self.get_logger().info('Goal requested by ' + str(request.droneid))
         response.deliverylocation.x = float(self.data[dataToPeek][0][0])
         response.deliverylocation.y = float(self.data[dataToPeek][0][1])
@@ -93,12 +101,40 @@ class DirectionPublisher(Node):
             response.pharmacy = False
         return response
     
+    def publish_goal(self, droneid, goal_data, trip_duration):
+        goal_message = Goal()
+        # [x, y, z, landing location type (0 or 1)]
+        x, y, z, goaltype = goal_data
+        goal_message.id = droneid
+        goal_message.resultingposition.x = x
+        goal_message.resultingposition.y = y
+        goal_message.resultingposition.z = z
+        goal_message.goaltype = goaltype
+        goal_message.deliverytime = trip_duration
+
+        self.goal_publisher.publish(goal_message)
+
+    
 def main(args=None):
     rclpy.init(args=args)
 
     # do path calculations
-    #data = job_scheduling.randomise_world(2)
+    # data = job_scheduling.randomise_world(2)
     #data = [[[5, 5, 0, 1], [0, 0, 0, 0]], [[-5, -5, 0, 1], [1, 1, 0, 0]]]
+
+    # ex. data = lists for each drone [ list for drone 1 [ 
+    #                                      delivery location 1 [x, y, z, house(0) or pharmacy(1)],
+    #                                       delivery location 2 [x, y, z, house(0) or pharmacy(1)],
+    #                                       delivery location 3 [x, y, z, home base(1)],
+    #                                    ], 
+    #                                   list for drone 2 [ 
+    #                                       delivery location 1 [x, y, z, house(0) or pharmacy(1)],
+    #                                       delivery location 2 [x, y, z, house(0) or pharmacy(1)],
+    #                                       delivery location 3 [x, y, z, house(0) or pharmacy(1)],
+    #                                       delivery location 4 [x, y, z, home base(1)],
+    #                                   ], 
+    #                                 ]
+
     dir_pub = DirectionPublisher(data)
     
     rclpy.spin(dir_pub)

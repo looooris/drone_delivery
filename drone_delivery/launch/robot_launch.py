@@ -44,6 +44,12 @@ def generate_launch_description():
             executable="grip_one",
         )
 
+        # Goal Publisher Node
+        goal  = Node(
+            package="drone_delivery",
+            executable="goal",
+        )
+
         # Launch Nodes
         return LaunchDescription([
             webots,
@@ -94,6 +100,12 @@ def generate_launch_description():
             executable="grip_two",
         )
 
+        # Goal Publisher Node
+        goal = Node(
+            package="drone_delivery",
+            executable="goal",
+        )
+
         # Launch Nodes
         return LaunchDescription([
             webots,
@@ -102,6 +114,7 @@ def generate_launch_description():
             grip_two,
             drone_one_control,
             drone_two_control,
+            goal,
             launch.actions.RegisterEventHandler(
                 event_handler=launch.event_handlers.OnProcessExit(
                     target_action=webots,
