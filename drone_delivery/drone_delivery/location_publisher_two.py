@@ -7,7 +7,7 @@ import math
 
 from drone_delivery_services.srv import Destination
 from drone_delivery_services.msg import Droneloc, Emergency, Goal
-from drone_delivery.drone_delivery import job_scheduling
+from drone_delivery import job_scheduling
 
 class DirectionPublisher(Node):
     def __init__(self, data):
@@ -106,11 +106,11 @@ class DirectionPublisher(Node):
         # [x, y, z, landing location type (0 or 1)]
         x, y, z, goaltype = goal_data
         goal_message.id = droneid
-        goal_message.resultingposition.x = x
-        goal_message.resultingposition.y = y
-        goal_message.resultingposition.z = z
-        goal_message.goaltype = goaltype
-        goal_message.deliverytime = trip_duration
+        goal_message.resultingposition.x = float(x)
+        goal_message.resultingposition.y = float(y)
+        goal_message.resultingposition.z = float(z)
+        goal_message.goaltype = int(goaltype)
+        goal_message.deliverytime = float(trip_duration)
 
         self.goal_publisher.publish(goal_message)
 
@@ -119,7 +119,7 @@ def main(args=None):
     rclpy.init(args=args)
 
     # do path calculations
-    # data = job_scheduling.randomise_world(2)
+    data = job_scheduling.randomise_world(2)
     #data = [[[5, 5, 0, 1], [0, 0, 0, 0]], [[-5, -5, 0, 1], [1, 1, 0, 0]]]
 
     # ex. data = lists for each drone [ list for drone 1 [ 

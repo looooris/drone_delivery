@@ -10,6 +10,7 @@
   <depend>rclpy</depend>
   <depend>rclpp</depend>
   <depend>geometry_msgs</depend>
+  <depend>drone_delivery_services</depend>
   <depend>webots_ros2_driver</depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
 

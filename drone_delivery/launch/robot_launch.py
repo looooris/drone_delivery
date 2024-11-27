@@ -56,6 +56,7 @@ def generate_launch_description():
             schedule,
             grip,
             drone_control,
+            goal,
             launch.actions.RegisterEventHandler(
                 event_handler=launch.event_handlers.OnProcessExit(
                     target_action=webots,

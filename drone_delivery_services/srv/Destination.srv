@@ -1,6 +1,6 @@
 string droneid
 geometry_msgs/Point currentposition
-float starttime
+float32 starttime
 ---
 geometry_msgs/Point deliverylocation
 bool pharmacy 
