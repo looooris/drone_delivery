@@ -6,9 +6,9 @@
 
 Ubuntu-based system
 
-[Installing ROS2](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
+ROS2: [Installing ROS2](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
 
-[Installing Webots](https://cyberbotics.com/doc/guide/installation-procedure)
+Webots: [Installing Webots](https://cyberbotics.com/doc/guide/installation-procedure)
 
 Webots / ROS2 Interface
 ```
@@ -18,7 +18,7 @@ Colcon
 ```
 sudo apt install colcon
 ```
-There are no python dependencies required for the project except those above. The drone_control_services package provides custom messages and servcies for use within the main drone_delivery package.
+There are no python dependencies required for the project aside from what is included in ROS, Webots and the interface above. The drone_control_services package provides custom messages and servcies for use within the main drone_delivery package but will be detected by ROS2 upon running `colcon build` and sourcing the `local_setup.bash` file.
 
 ## Run
 
