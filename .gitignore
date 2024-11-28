@@ -1,3 +1,4 @@
 build/
 install/
 log/
+drone_delivery/locations.csv

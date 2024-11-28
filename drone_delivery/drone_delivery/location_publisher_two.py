@@ -37,14 +37,14 @@ class DirectionPublisher(Node):
             #self.get_logger().info("Distance between robots: " + str(distanceBetween))
             emergency_message = Emergency()
 
-            if distanceBetween < 1 and abs(self.robot_one_pos.z - self.robot_two_pos.z) < 4:
+            if distanceBetween < 2 and (abs(self.robot_one_pos.z - self.robot_two_pos.z) < 4):
                 self.get_logger().info("Distance between drones is " + str(distanceBetween))
 
                 emergency_message.id = 1
                 emergency_message.safe = False
                 self.emergency_history = True
                 self.emergency_stop.publish(emergency_message)
-            if distanceBetween > 1 and self.emergency_history:
+            if distanceBetween > 1.75 and self.emergency_history:
                 emergency_message.id = 1
                 emergency_message.safe = True
                 self.emergency_history = False
@@ -120,7 +120,7 @@ def main(args=None):
 
     # do path calculations
     data = job_scheduling.randomise_world(2)
-
+    #data = [[[5, 5, 0, 0], [0,0,0,0]], [[5, 5, 0, 0], [1, 1, 0, 0]]]
     # ex. data = lists for each drone [ list for drone 1 [ 
     #                                      delivery location 1 [x, y, z, house(0) or pharmacy(1)],
     #                                       delivery location 2 [x, y, z, house(0) or pharmacy(1)],
