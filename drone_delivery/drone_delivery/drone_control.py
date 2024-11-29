@@ -230,7 +230,7 @@ class DroneDriver:
                         
                 else:
                     #self.subscription.get_logger().info('Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
-                    if distSense > 30: 
+                    if distSense > 40: 
                         # ascends if foreign object detected within 30 units (2m)
                         self.target_altitude += 0.5
                         pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1]
