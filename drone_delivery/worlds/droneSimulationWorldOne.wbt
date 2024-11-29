@@ -75,7 +75,7 @@ SquareManhole {
   name "House3"
 }
 ModernHouse {
-  translation 9.91 52.19 0
+  translation 9.91 57.28 0
 }
 SquareManhole {
   translation 54.04 44.62 -0.03

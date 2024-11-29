@@ -166,8 +166,10 @@ class DroneDriver:
 
         angleToMove = math.atan2((diff_y),(diff_x)) - imu[2] 
 
-        if (angleToMove >  math.pi): # return negative if less than pi, so robot turns other way
+        if angleToMove >= math.pi:
             angleToMove -= 2 * math.pi
+        elif angleToMove < -math.pi:
+            angleToMove += 2 * math.pi
 
         return distance, angleToMove
 
@@ -230,7 +232,7 @@ class DroneDriver:
                         
                 else:
                     #self.subscription.get_logger().info('Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
-                    if distSense > 40: 
+                    if distSense > 30: 
                         # ascends if foreign object detected within 30 units (2m)
                         self.target_altitude += 0.5
                         pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1]
@@ -242,7 +244,7 @@ class DroneDriver:
                                 self.target_altitude = gpsVal[2]
 
                         # Mathematical calculations - based upon https://github.com/patrickpbarroso/drone-simulation
-                        if abs(angle) > 0.1:
+                        if abs(angle) > 0.2:
                             yaw_input = 2 * angle / (2 * math.pi)
                             pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1]
                         else:
