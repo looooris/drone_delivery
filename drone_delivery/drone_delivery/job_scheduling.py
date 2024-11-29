@@ -362,12 +362,13 @@ def example_hardcoded_params():
 def randomise_world(number_of_drones):
     # example with hardcoded ids and coordinates
    
-    l1 = (2, 2, 0) # Pharmacy
-    l2 = (45.65, 38.58, 0) # Pharmacy
-    l3 = (60.65, -27.63, 0) # House
-    l4 = (16.78, 20.71, 0) # House
-    l5 = (30.55, -26.11, 0) # House
-    l6 = (-46, 4.12, 0) # House
+    l1 = (-6.49895, -40.7371, 0) # Pharmacy
+    l2 = (-45.65, 38.58, 0) # Pharmacy
+    l3 = (30.55, -26.11, 0) # House
+    l4 = (-60.65, -27.63, 0) # House
+    l4 = (16.78, 40.43, 0) # House
+    l5 = (-60.92, 17.92, 0) # Hose
+    l6 = (54.04, 44.62, 0) # House
 
     pharmacyList = [l1, l2]
     houseList = [l3, l4, l5, l6]

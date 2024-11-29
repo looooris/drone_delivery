@@ -37,7 +37,7 @@ class DirectionPublisher(Node):
             #self.get_logger().info("Distance between robots: " + str(distanceBetween))
             emergency_message = Emergency()
 
-            if distanceBetween < 2 and (abs(self.robot_one_pos.z - self.robot_two_pos.z) < 4):
+            if distanceBetween < 2 and (abs(self.robot_one_pos.z - self.robot_two_pos.z) < 4) and (self.robot_one_pos > 1 or self.robot_one_pos < 1):
                 self.get_logger().info("Distance between drones is " + str(distanceBetween))
 
                 emergency_message.id = 1
