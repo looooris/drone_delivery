@@ -13,6 +13,7 @@ def generate_launch_description():
     num_drones = 0
     while num_drones not in [1, 2]:
         num_drones = input("===\nWould you like to simulate one or two drones?\nPlease enter either (1) or (2).\n===\n")
+        # input validation
         if not num_drones.isdigit():
             num_drones = 0
         else:

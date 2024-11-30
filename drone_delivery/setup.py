@@ -18,9 +18,9 @@ setup(
     zip_safe=True,
     maintainer='Loris for Group 12',
     maintainer_email='l.giuliani.22@abdn.ac.uk',
-    description='A drone delivery implementation in ROS2.',
-    license='Do not share or reuse this code.',
-    tests_require=['pytest'],
+    description='A simple drone delivery implementation in ROS2 and Webots.',
+    license='Apache 2.0',
+    tests_require=[''],
     entry_points={
         'console_scripts': [
             'drone_control = drone_delivery.drone_control:main',
