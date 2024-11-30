@@ -120,7 +120,7 @@ def main(args=None):
 
     # do path calculations
     data = job_scheduling.randomise_world(2)
-    #data = [[[5, 5, 0, 0], [0,0,0,0]], [[-5, -5, 0, 0], [1, 1, 0, 0]]]
+    #data = [[[-45.65, 38.58, 0, 1], [54.04, 44.62, 0, 0], [-6.49895, -40.7371, 0, 1], [-60.92, 17.92, 0, 0], [-45.65, 38.58, 0, 1], [16.78, 40.43, 0, 0], [0, 0, 0, 1]], [[-6.49895, -40.7371, 0, 1], [-60.92, 17.92, 0, 0], [-45.65, 38.58, 0, 1], [54.04, 44.62, 0, 0], [1, 1, 0, 1]]]
     # ex. data = lists for each drone [ list for drone 1 [ 
     #                                      delivery location 1 [x, y, z, house(0) or pharmacy(1)],
     #                                       delivery location 2 [x, y, z, house(0) or pharmacy(1)],
@@ -129,7 +129,7 @@ def main(args=None):
     #                                   list for drone 2 [ 
     #                                       delivery location 1 [x, y, z, house(0) or pharmacy(1)],
     #                                       delivery location 2 [x, y, z, house(0) or pharmacy(1)],
-    #                                       delivery location 3 [x, y, z, house(0) or pharmacy(1)],
+    #                                           delivery location 3 [x, y, z, house(0) or pharmacy(1)],
     #                                       delivery location 4 [x, y, z, home base(1)],
     #                                   ], 
     #                                 ]
