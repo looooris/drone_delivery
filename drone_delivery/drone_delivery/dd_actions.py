@@ -127,9 +127,11 @@ class Move(Action):
         return resulting_state
 
     def describe_move(self, locations):
+        # outputs the drone's imminent journey
         print(f'drone {self.drone_id} moves from {locations[self.takeoff_location].type}: {self.takeoff_location} to {locations[self.landing_location].type}: {self.landing_location}')
 
     def describe_state(self, state, locations):
+        # outputs the current state of the drone
         drone = state[0][self.drone_id]
         print(f'current location: {locations[drone.pos].type}: {drone.pos}')
         print(f'current drone status: {drone.status}')

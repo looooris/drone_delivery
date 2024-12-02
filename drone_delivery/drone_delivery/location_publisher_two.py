@@ -39,7 +39,7 @@ class DirectionPublisher(Node):
 
             if distanceBetween < 2 and (abs(self.robot_one_pos.z - self.robot_two_pos.z) < 4) and ((self.robot_one_pos.x > 1 or self.robot_one_pos.x < -1) and (self.robot_one_pos.y > 1 or self.robot_one_pos.y < -1)):
                 self.get_logger().info("Distance between drones is " + str(distanceBetween))
-
+                # prepares for emergency, drones are too close to each other
                 emergency_message.id = 1
                 emergency_message.safe = False
                 self.emergency_history = True

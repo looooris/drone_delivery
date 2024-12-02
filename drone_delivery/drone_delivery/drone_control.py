@@ -68,25 +68,27 @@ class DroneDriver:
 
     def initiate_emergency(self, msg):
         if not msg.safe:
-            self.safe = False
+            self.safe = False # change of value results in emergency raising altitude
             self.subscription.get_logger().info("collission imminent. taking evasive action.")
         else:   
             self.safe = True
 
     def emergency_callback(self, msg):
-        if self.robot.name == "drone_one" and msg.id == 1: self.initiate_emergency(msg)
+        # sends either a safe or unsafe message to relevant function
+        if self.robot.name == "drone_one" and msg.id == 1: self.initiate_emergency(msg) 
         elif self.robot.name == "drone_two" and msg.id == 2: self.initiate_emergency(msg)
     
     async def location_callback(self):
+        # returns co-ordinates
         gpsValues = self.gps.getValues()
         message = Droneloc()
 
-        message.currentposition = Point()
-        message.currentposition.x = gpsValues[0]
-        message.currentposition.y = gpsValues[1]
-        message.currentposition.z = gpsValues[2]
+        message.currentposition = Point() # 'central' point of the drone
+        message.currentposition.x = gpsValues[0] # linear x
+        message.currentposition.y = gpsValues[1] # linear y
+        message.currentposition.z = gpsValues[2] # linear z
 
-        if self.robot.name == "drone_one":
+        if self.robot.name == "drone_one": # differentiates drone one and two
             message.id = 1
         else:
             message.id = 2
@@ -198,7 +200,7 @@ class DroneDriver:
 
                 distance, angle = self.calcAngleDist(gpsVal, intComVal)
                 roll_move, pitch_move = self.calcPitchRoll(gpsVal)
-                if not self.safe: #if near collision, stop robot
+                if not self.safe: # if near collision, raise the drone
                     yaw_input = 0     
                     roll_input = 50 * self.bind(intComVal[0], -1, 1) 
                     pitch_input = 30 * self.bind(intComVal[1], -1, 1)
