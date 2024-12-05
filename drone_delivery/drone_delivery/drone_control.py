@@ -68,12 +68,13 @@ class DroneDriver:
 
     def initiate_emergency(self, msg):
         if not msg.safe:
-            self.safe = False
+            self.safe = False #change of value results in emergency raising altitude
             self.subscription.get_logger().info("collission imminent. taking evasive action.")
         else:   
             self.safe = True
 
     def emergency_callback(self, msg):
+        #sends either a safe or unsafe message to relevant function
         if self.robot.name == "drone_one" and msg.id == 1: self.initiate_emergency(msg)
         elif self.robot.name == "drone_two" and msg.id == 2: self.initiate_emergency(msg)
     
@@ -131,12 +132,12 @@ class DroneDriver:
         
     # Returns the location, angle, speed and distance sensor detections of the drone
     def locateDrone(self):
-        internalComputerValues = self.computer.getRollPitchYaw()
+        intMovValues = self.computer.getRollPitchYaw()
         gpsValues = self.gps.getValues()
         droneVelocity = self.gps.getSpeed()
         gyroValues = self.gyro.getValues()
         distSense = self.distanceSensor.getValue()
-        return internalComputerValues, gpsValues, gyroValues, droneVelocity, distSense
+        return intMovValues, gpsValues, gyroValues, droneVelocity, distSense
 
     # Calulates if the drone needs to increase or decrease pitch and roll
     def calcPitchRoll(self, gps):
@@ -190,6 +191,7 @@ class DroneDriver:
             rclpy.spin_once(self.subscription, timeout_sec=0)
             intComVal, gpsVal, gyroVal, droneVelocity, distSense = self.locateDrone()
             if self.launchable: # Robot is in a launchable state
+                # Most drone control calculations based upon https://github.com/cyberbotics/webots/blob/master/projects/robots/dji/mavic/controllers/mavic2pro_patrol/mavic2pro_patrol.py
                 roll_move = 0
                 pitch_move = 0
                 vertical_input = 0
@@ -198,11 +200,11 @@ class DroneDriver:
 
                 distance, angle = self.calcAngleDist(gpsVal, intComVal)
                 roll_move, pitch_move = self.calcPitchRoll(gpsVal)
-                if not self.safe: #if near collision, stop robot
-                    yaw_input = 0     
+                if not self.safe: #if near collision, raise robot 
                     roll_input = 50 * self.bind(intComVal[0], -1, 1) 
                     pitch_input = 30 * self.bind(intComVal[1], -1, 1)
-                    vertical_input = 5* self.bind(self.target_altitude, -1, 1)**3.0
+                    vertical_input = 5 * self.bind(self.target_altitude, -1, 1)**3.0
+
                 elif distance < 1:   
                     #landing sequence
                     if abs(gpsVal[1] - self.robot_target.y) < 0.5 and abs(gpsVal[0] - self.robot_target.x) < 0.5: 
@@ -211,7 +213,7 @@ class DroneDriver:
                             self.launchable = False
                             for propeller in self.propList:
                                 propeller.setVelocity(0)    # stops propellers
-                            fineControl = True  # disables movement
+                            fineControl = True  # disables propeller movement
                             if self.to_pharmacy:
                                 if self.is_gripper_open:
                                     self.sendGripRequest(False) # closes gripper if destination is pharmacy (pick up)
@@ -224,18 +226,20 @@ class DroneDriver:
                                 vertical_input = self.bind(self.target_altitude-gpsVal[2], -4, -1)
                             else:
                                 vertical_input = 3.0 * self.bind(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0    # begins ascent    
+
                     if not fineControl:
                         yaw_input = 0.8 * angle / (2 * math.pi)     
                         roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
                         pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1] + self.bind(math.log10(abs(angle)), -0.2, 0.1)
-                                                    
                         
                 else:
-                    #self.subscription.get_logger().info('Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
+                    if self.target_altitude > 20:
+                        self.target_altitude = 20
+                    
                     if distSense > 30: 
                         # ascends if foreign object detected within 30 units (2m)
                         self.target_altitude += 0.5
-                        pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1]
+                        pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1] # remove forwards movement
                     else:
                         # if robot is clear but still has a lot to travel upwards, cancel the upwards movement
                         if distSense == 0 and abs(self.target_altitude - gpsVal[2]) > 2 and self.target_altitude != 3:
@@ -243,7 +247,6 @@ class DroneDriver:
                                 self.subscription.get_logger().info('New target altitude at ' + str(gpsVal[2]) + ' Distance Sensor Reads '+ str(distSense) + '. Target Altitude ' + str(self.target_altitude))
                                 self.target_altitude = gpsVal[2]
 
-                        # Mathematical calculations - based upon https://github.com/patrickpbarroso/drone-simulation
                         if abs(angle) > 0.2:
                             yaw_input = 2 * angle / (2 * math.pi)
                             pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1]
@@ -255,7 +258,6 @@ class DroneDriver:
                     vertical_input = 3.0 * self.bind(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
                     roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
     
-
                 if not fineControl:
                     # Robot propeller settings
                     self.frp.setVelocity(-(70 + vertical_input + yaw_input + pitch_input + roll_input)) # Front Right
@@ -268,8 +270,7 @@ class DroneDriver:
                     response = None
                     while response is None:
                         response = self.sendRequest()
-
-                    
+ 
 
                     # update target and relaunch robot
                     self.updateTarget(response)              

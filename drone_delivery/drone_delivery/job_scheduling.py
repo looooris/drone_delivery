@@ -218,12 +218,14 @@ def parse_ros_objects(csv_file):
             object_name = col[0]
             pos = (col[1], col[2], col[3])
 
+            # parses and intialises house objects
             # ex: 'H,16,15,0'
             if object_name == 'H': 
                 house = House(location_id, pos)
                 locations[pos] = house
                 location_id += 1
                 
+            # parses and initalises Pharmacy objects
             # ex: 'P,-25,-25,0'
             elif object_name == 'P':
                 pharmacy = Pharmacy(location_id, pos)
@@ -231,6 +233,8 @@ def parse_ros_objects(csv_file):
                 inventories[pos] = {}
                 location_id += 1
 
+
+            # parses and initialises Box objects    
             # ex: 'B,-25,-25,0,16,15,0,None'
             elif object_name == 'B':
                 dropoff_pos = (col[4], col[5], col[6])
@@ -239,6 +243,7 @@ def parse_ros_objects(csv_file):
                 boxes.append(box)
                 box_id += 1
 
+            # parses and initialises Drone objects
             # ex: 'D,0,0,0,None'
             elif object_name == 'D':
                 status = col[4]

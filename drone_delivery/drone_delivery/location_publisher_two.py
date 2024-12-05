@@ -40,6 +40,7 @@ class DirectionPublisher(Node):
             if distanceBetween < 2 and (abs(self.robot_one_pos.z - self.robot_two_pos.z) < 4) and ((self.robot_one_pos.x > 1 or self.robot_one_pos.x < -1) and (self.robot_one_pos.y > 1 or self.robot_one_pos.y < -1)):
                 self.get_logger().info("Distance between drones is " + str(distanceBetween))
 
+                # prepares for emergency if drones are too close
                 emergency_message.id = 1
                 emergency_message.safe = False
                 self.emergency_history = True
@@ -67,28 +68,17 @@ class DirectionPublisher(Node):
             # drone has arrived at goal
             self.publish_goal("drone_"+drone_idy, self.data[dataToPeek][0], trip_duration)
             
-            if drone_idy == "one":
-                if len(self.data[0]) > 1: # if drone 1 has tasks left
-                    # drone 1 completed task, so remove from task list
-                    self.data[0].pop(0)
-                else: # otherwise drone 1 is already home
-                    response.deliverylocation.x = float(-1)
-                    response.deliverylocation.y = float(-1)
-                    response.deliverylocation.z = float(-1)
-                    robot_one_pos = None
-                    response.pharmacy = False
-                    return response
-            else:
-                if len(self.data[1]) > 1: # if drone 2 has tasks left
-                    # drone 2 completed task, so remove from task list
-                    self.data[1].pop(0)
-                else: # otherwise drone 2 is already home
-                    response.deliverylocation.x = float(-1)
-                    response.deliverylocation.y = float(-1)
-                    response.deliverylocation.z = float(-1)
-                    robot_two_pos = None
-                    response.pharmacy = False
-                    return response
+            if len(self.data[dataToPeek]) > 1: # if drone 1 has tasks left
+                # drone 1 completed task, so remove from task list
+                self.data[dataToPeek].pop(0)
+            else: # otherwise drone 1 is already home
+                response.deliverylocation.x = float(-1)
+                response.deliverylocation.y = float(-1)
+                response.deliverylocation.z = float(-1)
+                if dataToPeek == 0: robot_one_pos = None
+                else: robot_two_pos = None
+                response.pharmacy = False
+                return response
                 
         # drone is provided with new location to go to
         self.get_logger().info('Goal requested by ' + str(request.droneid))
