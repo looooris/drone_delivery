@@ -11,7 +11,7 @@ from drone_delivery_services.msg import Droneloc, Emergency
 class DroneDriver:
     def init(self, webots_node, properties):
         self.robot = webots_node.robot
-        self.time_step = 1
+        self.time_step = 1 # default world time step    
         self.start_time = time.time() # initalise a timer
 
         # Initalise sensors
@@ -109,7 +109,7 @@ class DroneDriver:
     # Sends a request to open the gripper. Sends goal
     def sendGripRequest(self, data):
         griprequest = Gripper.Request()
-        griprequest.open = data
+        griprequest.open = data 
         self.is_gripper_open = data
         self.gripfuture = self.gripper_client.call_async(griprequest)
         rclpy.spin_until_future_complete(self.subscription, self.gripfuture)
