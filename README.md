@@ -22,7 +22,7 @@ There are no python dependencies required for the project aside from what is inc
 
 ## Run
 
-To run, clone this repository into the src folder within your ROS2 workspace.
+To run, clone this repository and place the `drone_delivery` and `drone_delivery_services` into the src folder within your ROS2 workspace. If you do not this, the CSV writer will not function and throw an error inside the terminal, but the program will continue.
 
 Note: If you have not created a workspace previously, you will need to create one: [Creating a ROS2 Workspace](https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Creating-A-Workspace/Creating-A-Workspace.html)
 
