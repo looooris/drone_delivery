@@ -371,12 +371,12 @@ def randomise_world(number_of_drones):
     l2 = (-45.65, 38.58, 0) # Pharmacy
     l3 = (30.55, -26.11, 0) # House
     l4 = (-60.65, -27.63, 0) # House
-    l4 = (16.78, 40.43, 0) # House
-    l5 = (-60.92, 17.92, 0) # Hose
-    l6 = (54.04, 44.62, 0) # House
+    l5 = (16.78, 40.43, 0) # House
+    l6 = (-60.92, 17.92, 0) # Hose
+    l7 = (54.04, 44.62, 0) # House
 
     pharmacyList = [l1, l2]
-    houseList = [l3, l4, l5, l6]
+    houseList = [l3, l4, l5, l6, l7]
 
 
     # box id, pickup location, dropoff location, priority status (default is none)
@@ -454,7 +454,7 @@ def randomise_world(number_of_drones):
 
     # avoid sending robots to the same place initially
     if len(plan) > 1 and len(returnPlans[0]) > 2:
-        if returnPlans[0][0] == returnPlans[1][0]:
+        if returnPlans[0][0] == returnPlans[1][0] or returnPlans[0][1] == returnPlans[1][1]:
             if returnPlans[0][2] == returnPlans[1][0]:
                 temp = returnPlans[1][0]
                 temptwo = returnPlans[1][1]

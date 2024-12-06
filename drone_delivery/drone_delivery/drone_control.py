@@ -44,7 +44,6 @@ class DroneDriver:
         self.at_target = False
         self.killRobot = False
         self.safe = True
-        
 
         # Destination metadata
         self.robot_target = Point()
@@ -56,8 +55,6 @@ class DroneDriver:
         self.subscription = rclpy.create_node('driver_'+self.robot.name) 
         self.destination_client = self.subscription.create_client(Destination, 'drone_destination_service')
         self.gripper_client = self.subscription.create_client(Gripper, self.robot.name + '_gripper')
-        self.destrequest = Destination.Request()
-        self.griprequest = Gripper.Request()
         while not self.destination_client.wait_for_service(timeout_sec=1.0) or not self.gripper_client.wait_for_service(timeout_sec=1.0):
             self.subscription.get_logger().info('service(s) not available, waiting again...')
 
@@ -96,22 +93,24 @@ class DroneDriver:
 
     # For sending a request to the location publisher. Sends current position and receives goal
     def sendRequest(self):
+        destrequest = Destination.Request()
         gpsValues = self.gps.getValues()
-        self.destrequest.droneid = self.robot.name
-        self.destrequest.currentposition.x = gpsValues[0]
-        self.destrequest.currentposition.y = gpsValues[1]
-        self.destrequest.currentposition.z = gpsValues[2]
-        self.destrequest.starttime = self.start_time # time at beginning of trip
-        self.destfuture = self.destination_client.call_async(self.destrequest)
+        destrequest.droneid = self.robot.name
+        destrequest.currentposition.x = gpsValues[0]
+        destrequest.currentposition.y = gpsValues[1]
+        destrequest.currentposition.z = gpsValues[2]
+        destrequest.starttime = self.start_time # time at beginning of trip
+        self.destfuture = self.destination_client.call_async(destrequest)
         self.reset_time()
         rclpy.spin_until_future_complete(self.subscription, self.destfuture)
         return self.destfuture.result()
 
     # Sends a request to open the gripper. Sends goal
     def sendGripRequest(self, data):
-        self.griprequest.open = data
+        griprequest = Gripper.Request()
+        griprequest.open = data
         self.is_gripper_open = data
-        self.gripfuture = self.gripper_client.call_async(self.griprequest)
+        self.gripfuture = self.gripper_client.call_async(griprequest)
         rclpy.spin_until_future_complete(self.subscription, self.gripfuture)
         return self.gripfuture.result()
 
@@ -191,7 +190,7 @@ class DroneDriver:
             rclpy.spin_once(self.subscription, timeout_sec=0)
             intComVal, gpsVal, gyroVal, droneVelocity, distSense = self.locateDrone()
             if self.launchable: # Robot is in a launchable state
-                # Most drone control calculations based upon https://github.com/cyberbotics/webots/blob/master/projects/robots/dji/mavic/controllers/mavic2pro_patrol/mavic2pro_patrol.py
+                # drone propeller calculations based upon https://github.com/cyberbotics/webots/blob/master/projects/robots/dji/mavic/controllers/mavic2pro_patrol/mavic2pro_patrol.py
                 roll_move = 0
                 pitch_move = 0
                 vertical_input = 0
@@ -203,7 +202,7 @@ class DroneDriver:
                 if not self.safe: #if near collision, raise robot 
                     roll_input = 50 * self.bind(intComVal[0], -1, 1) 
                     pitch_input = 30 * self.bind(intComVal[1], -1, 1)
-                    vertical_input = 5 * self.bind(self.target_altitude, -1, 1)**3.0
+                    vertical_input = 3
 
                 elif distance < 1:   
                     #landing sequence
@@ -233,9 +232,7 @@ class DroneDriver:
                         pitch_input = 30 * self.bind(intComVal[1], -1, 1) + gyroVal[1] + self.bind(math.log10(abs(angle)), -0.2, 0.1)
                         
                 else:
-                    if self.target_altitude > 20:
-                        self.target_altitude = 20
-                    
+                                    
                     if distSense > 30: 
                         # ascends if foreign object detected within 30 units (2m)
                         self.target_altitude += 0.5
@@ -258,6 +255,9 @@ class DroneDriver:
                     vertical_input = 3.0 * self.bind(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
                     roll_input = 50 * self.bind(intComVal[0], -1, 1) + gyroVal[0]
     
+                if gpsVal[2] > 20:
+                        vertical_input = self.bind(-abs(20-gpsVal[2]), -4, -1)
+
                 if not fineControl:
                     # Robot propeller settings
                     self.frp.setVelocity(-(70 + vertical_input + yaw_input + pitch_input + roll_input)) # Front Right
