@@ -85,7 +85,7 @@ def generate_launch_description():
                 ],
             )
 
-        # Location Publisher Node
+        # Location Publisher Node (Two Drone Version)
         schedule_two = Node(
             package="drone_delivery",
             executable="schedule_two",

@@ -25,12 +25,7 @@ class DirectionPublisher(Node):
         if abs(request.currentposition.x - float(self.data[0][0])) < 0.5 and abs(request.currentposition.y - float(self.data[0][1])) < 0.5:
             trip_duration = time.time() - request.starttime
             self.publish_goal("drone_one", self.data[0], trip_duration)
-            # if self.data[0][3] == 1: # goal was pharmacy, send request
-            #     self.movementbot_target = request.currentposition
-            #    # while not self.wheelbotDest:
-            #     #    pass
-            #     #    #self.get_logger().info("Wheelbot is not at dest, cannot continue")
-            #     #self.movementbot_target = None
+
             if len(self.data) > 1:
                 self.data.pop(0)
 
@@ -73,6 +68,7 @@ def main(args=None):
     # do path calculations
     
     data = job_scheduling.randomise_world(1)
+    #data=[[[-45.65, 38.58, 0, 0],[-60.65, -27.63, 0, 0],[0,0,0,0]]]
     dir_pub = DirectionPublisher(data[0])
     
     rclpy.spin(dir_pub)

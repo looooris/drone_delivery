@@ -315,57 +315,8 @@ def print_plans(plans):
             print(f'action name: {action_name}, next_pos ({resulting_pos_type}): {resulting_pos}, box status: {box_status}')
         print()
 
-def example_hardcoded_params():
-    # example with hardcoded ids and coordinates
-    l1 = (2, 3, 3) #pharmacy
-    l2 = (6, 3, 1) #Pharmacy
-    l3 = (4, 2, 7) #house
-    l4 = (2, 0, 1) #House
-
-    # pickup location, dropoff location, priority status (default is none)
-    box1 = Box(0, l1, l3)
-    box2 = Box(1, l1, l3, 'urgent')
-    box3 = Box(2, l1, l4)
-    box4 = Box(3, l2, l3)
-    box5 = Box(4, l2, l4)
-
-    drones = {
-        # done_id, pos (x, y, z), status (box object or none)
-        0: Drone(0, (1, 1, 1)),
-        1: Drone(1, (1, 2, 2), box1),
-        2: Drone(2, (1, 4, 3), box2)
-        }
-                
-    # each location (pharmacy or house) will have a unique id
-    # box_id or order_id, box object
-    inventory1 = {box1, box2, box3}
-    inventory2 = {box4, box5}
-
-
-    inventories = {
-        #pharmacy_id, pharmacy.inventory
-        l1: inventory1,
-        l2: inventory2
-    }
-
-    pharmacy1 = Pharmacy(0, l1)
-    pharmacy2 = Pharmacy(1, l2)
-    house1 = House(2, l3)
-    house2 = House(3, l4)
-
-
-    locations = {
-        # (x, y, z), location object
-        l1: pharmacy1, 
-        l2: pharmacy2, 
-        l3: house1, 
-        l4: house2
-                }
-    return drones, inventories, locations
-
-
 def randomise_world(number_of_drones):
-    # example with hardcoded ids and coordinates
+    # example with hardcoded ids and coordinates of webots world
    
     l1 = (-6.49895, -40.7371, 0) # Pharmacy
     l2 = (-45.65, 38.58, 0) # Pharmacy
@@ -377,7 +328,6 @@ def randomise_world(number_of_drones):
 
     pharmacyList = [l1, l2]
     houseList = [l3, l4, l5, l6, l7]
-
 
     # box id, pickup location, dropoff location, priority status (default is none)
     if number_of_drones == 2:
@@ -425,6 +375,7 @@ def randomise_world(number_of_drones):
     house2 = House(l4)
     house3 = House(l5)
     house4 = House(l6)
+    house5 = House(l7)
 
     locations = {
         # (x, y, z), location object
@@ -433,7 +384,8 @@ def randomise_world(number_of_drones):
         l3: house1, 
         l4: house2,
         l5: house3,
-        l6: house4
+        l6: house4,
+        l7: house5
                 }
 
     plan = generate_plan(drones, inventories, locations)
@@ -453,7 +405,7 @@ def randomise_world(number_of_drones):
         returnPlans[singleItem].append([singleItem, singleItem, 0, 1])
 
     # avoid sending robots to the same place initially
-    if len(plan) > 1 and len(returnPlans[0]) > 2:
+    if len(plan) > 1 and len(returnPlans[0]) > 3 and len(returnPlans[1]) > 3:
         if returnPlans[0][0] == returnPlans[1][0] or returnPlans[0][1] == returnPlans[1][1]:
             if returnPlans[0][2] == returnPlans[1][0]:
                 temp = returnPlans[1][0]
@@ -479,8 +431,10 @@ def randomise_world(number_of_drones):
 # example with hardcoded values. uncomment the line below to get params
 #drones, inventories, locations = example_hardcoded_params()
 
-# example with hardcoded values. uncomment the line below to get params
-#randomise_world(2)
+# # example with hardcoded values. uncomment the line below to get params
+# for x in range(500):
+#     plans = randomise_world(2)
+#     print(len(plans))
 #randomise_world(1)
 
 # get list of tasks for each drone

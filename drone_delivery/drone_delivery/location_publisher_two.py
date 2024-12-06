@@ -22,7 +22,7 @@ class DirectionPublisher(Node):
         self.get_logger().info("Drone one goals: " + str(data[0]))
         self.get_logger().info("Drone two goals: " + str(data[1]))
 
-        self.location_sub = self.create_subscription(Droneloc, 'drone_location', self.drone_location_callback, 10)
+        self.location_sub = self.create_subscription(Droneloc, 'drone_location', self.drone_location_callback, 3)
         self.emergency_stop = self.create_publisher(Emergency, 'drone_emergency', 3)
         self.goal_publisher = self.create_publisher(Goal, 'drone_goal', 3)
     
@@ -37,14 +37,17 @@ class DirectionPublisher(Node):
             #self.get_logger().info("Distance between robots: " + str(distanceBetween))
             emergency_message = Emergency()
 
-            if distanceBetween < 2 and ((self.robot_one_pos.x > 1 and abs(self.robot_one_pos.z - self.robot_two_pos.z) < 5 or self.robot_one_pos.x < -1) and (self.robot_one_pos.y > 1 or self.robot_one_pos.y < -1)):
+            if distanceBetween < 2 and ((self.robot_one_pos.x > 1 or self.robot_one_pos.x < -1) and (self.robot_one_pos.y > 1 or self.robot_one_pos.y < -1)):
                 self.get_logger().info("Distance between drones is " + str(distanceBetween))
 
                 # prepares for emergency if drones are too close
-                if self.robot_one_pos.z > self.robot_two_pos.z:
-                    emergency_message.id = 1
+                if self.emergency_history[1] == None:
+                    if self.robot_one_pos.z > self.robot_two_pos.z:
+                        emergency_message.id = 1
+                    else:
+                        emergency_message.id = 2
                 else:
-                    emergency_message.id = 2
+                    emergency_message.id = self.emergency_history[1]
                 emergency_message.safe = False
                 self.emergency_history = [True, emergency_message.id]
                 self.emergency_stop.publish(emergency_message)
@@ -113,9 +116,9 @@ def main(args=None):
 
     # do path calculations
     data = job_scheduling.randomise_world(2)
-    #data = [[[-6.49895, -40.7371, 0, 1],[16.78, 40.43,0, 0],[0,0,0,0]], [[-45.65, 38.58, 0, 0],[16.78, 40.43,0,0],[1,1,0,0]]] # Pharmacy
-    l2 = () # Pharmacy]
+    #data = [[[-45.65, 38.58, 0, 0],[16.78, 40.43,0,0],[0,0,0,0]], [[-6.49895, -40.7371, 0, 1],[16.78, 40.43,0, 0],[1,1,0,0]]] # Pharmacy
     #data = [[[-45.65, 38.58, 0, 1], [54.04, 44.62, 0, 0], [-6.49895, -40.7371, 0, 1], [-60.92, 17.92, 0, 0], [-45.65, 38.58, 0, 1], [16.78, 40.43, 0, 0], [0, 0, 0, 1]], [[-6.49895, -40.7371, 0, 1], [-60.92, 17.92, 0, 0], [-45.65, 38.58, 0, 1], [54.04, 44.62, 0, 0], [1, 1, 0, 1]]]
+    #data = [[[6, 0, 0, 0], [-5, 0, 0 ,0],[0,0,0,0]],[[0,5,0,0],[0,-5,0,0],[1,1,1,0]]]
     # ex. data = lists for each drone [ list for drone 1 [ 
     #                                      delivery location 1 [x, y, z, house(0) or pharmacy(1)],
     #                                       delivery location 2 [x, y, z, house(0) or pharmacy(1)],
