@@ -247,9 +247,9 @@ class DroneDriver:
                             yaw_input = 2 * angle / (2 * math.pi)
                             pitch_input = 30 * self.bind(imuVal[1], -1, 1) + gyroVal[1]
                         else:
-                            #slows rotation
+                            #slows rotation and moves forwards
                             yaw_input = angle / (2 * math.pi)
-                            pitch_input = 30 * self.bind(imuVal[1], -1, 1) + gyroVal[1] + self.bind(math.log10(abs(angle)), -1, 0.1)    
+                            pitch_input = 30 * self.bind(imuVal[1], -1, 1) + gyroVal[1] + self.bind(-(distance/3), -1, 0.1)    
 
                     vertical_input = 3.0 * self.bind(self.target_altitude - gpsVal[2] + 0.6, -1, 1)**3.0
                     roll_input = 50 * self.bind(imuVal[0], -1, 1) + gyroVal[0]
